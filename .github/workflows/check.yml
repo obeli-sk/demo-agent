@@ -21,6 +21,34 @@ defaults:
     shell: bash -xe {0}
 
 jobs:
+  check-dev-deps:
+    name: Check dev-deps.txt
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: nixbuild/nix-quick-install-action@v34
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          nix_conf: |
+            extra-substituters = https://obeli-sk.cachix.org
+            extra-trusted-public-keys = obeli-sk.cachix.org-1:31iM9GWSEhAXvvuTWQ7CvAcwvgRzsuJ9yJghywSd3Jw=
+
+      - name: Populate the Nix store
+        run: nix develop --command echo
+
+      - name: Regenerate dev-deps.txt
+        run: nix develop --command ./scripts/dev-deps.sh
+
+      - name: Check dev-deps.txt
+        run: |
+          cat dev-deps.txt
+          if ! git diff --quiet -- dev-deps.txt; then
+              echo "dev-deps.txt is stale:"
+              git diff -- dev-deps.txt
+              exit 1
+          fi
+
   test:
     name: Unit tests
     runs-on: ubuntu-24.04

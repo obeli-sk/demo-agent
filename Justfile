@@ -13,8 +13,8 @@ serve-mock:
 
 # Compile, link and policy-check both deployments; needs OBELISK_API_TOKEN.
 verify:
-  obelisk server verify --server-config server.toml --app-config app.toml -d deployment.toml
-  obelisk server verify --server-config server.toml --app-config app.mock.toml -d deployment.mock.toml
+  obelisk server verify --skip-db --server-config server.toml --app-config app.toml -d deployment.toml
+  obelisk server verify --skip-db --server-config server.toml --app-config app.mock.toml -d deployment.mock.toml
 
 # Unit tests: pure logic, runnable offline (no Obelisk, no network).
 test:

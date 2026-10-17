@@ -45,11 +45,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1791920364,
-        "narHash": "sha256-KprRo32LoASYIWkPXCpk2K1NyV0JFRcsmQ0XfXpBSxQ=",
+        "lastModified": 1792259819,
+        "narHash": "sha256-RmW/spveKhIwxszp5OkO5lp3/YmW1vNZT/CVrtSeuwA=",
         "owner": "obeli-sk",
         "repo": "obelisk",
-        "rev": "d9a830fc5c1082cf6ef4d0cf4b0acb5e0d90163f",
+        "rev": "f4e4c34944ff549da8d752d7534c385d97ddd974",
         "type": "github"
       },
       "original": {

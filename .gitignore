@@ -4,3 +4,4 @@ models.json
 node_modules
 /obelisk_server_daily.log*
 /sqlite/
+.env

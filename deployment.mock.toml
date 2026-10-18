@@ -146,7 +146,7 @@ routes = [
   { methods = ["POST"], route = "/api/input/:execution-id" },
 ]
 # AGENT_MODELS defaults to a mock entry here (in deployment.toml it is required)
-# so the mock demo needs no environment at all beyond OBELISK_API_TOKEN.
+# so the mock demo needs no environment at all.
 env_vars = [
   { key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" },
   { key = "OBELISK_UI_URL", value = "${OBELISK_UI_URL:-http://127.0.0.1:8080}" },

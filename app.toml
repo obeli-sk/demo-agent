@@ -5,7 +5,7 @@ app_name = "agent-template"
 LLM_API_KEY = { optional = true }
 # The agent's own Obelisk instance: used by the UI (read polling) and the
 # control activities (cancel/stub).
-OBELISK_API_TOKEN = {}
+OBELISK_API_TOKEN = { type = "internal" }
 
 # Variables with a `${X:-default}` fallback in deployment.toml are optional.
 [public_env]

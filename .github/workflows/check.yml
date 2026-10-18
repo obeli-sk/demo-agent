@@ -93,7 +93,6 @@ jobs:
       - name: obelisk server verify
         env:
           AGENT_MODELS: "[]"
-          OBELISK_API_TOKEN: ci-placeholder
         run: nix develop --command just verify
 
   e2e:

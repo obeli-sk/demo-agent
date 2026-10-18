@@ -3,7 +3,7 @@
 app_name = "agent-template"
 
 [secrets]
-OBELISK_API_TOKEN = {}
+OBELISK_API_TOKEN = { type = "internal" }
 
 # Variables with a `${X:-default}` fallback in deployment.mock.toml are optional.
 [public_env]

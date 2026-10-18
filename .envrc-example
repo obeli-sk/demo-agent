@@ -1,8 +1,5 @@
 use flake .
 
-# The agent's own Obelisk instance token (read polling + cancel/stub).
-export OBELISK_API_TOKEN=$(obelisk generate token)
-
 # Local backend: models are discovered from GET /v1/models.
 export LLM_BASE_URL=http://127.0.0.1:9190
 

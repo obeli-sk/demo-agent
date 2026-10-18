@@ -45,7 +45,6 @@ the source of truth for both sides.
 JS components need no build. Configure the LLM endpoint, then serve:
 
 ```sh
-export OBELISK_API_TOKEN=$(obelisk generate token)
 export LLM_BASE_URL=http://127.0.0.1:9190         # discover models from the local backend
 just serve                                        # obelisk server run -d deployment.toml
 ```
@@ -62,7 +61,6 @@ To see the whole loop drive a turn without any LLM setup, run the mock
 deployment:
 
 ```sh
-export OBELISK_API_TOKEN=$(obelisk generate token)
 just serve-mock            # deployment.mock.toml + app.mock.toml
 ```
 
@@ -71,7 +69,7 @@ It swaps only the LLM client for a scripted stand-in
 `fetch_url` tool call to a dummy `/demo` webhook on the same server
 ([`webhook/demo-page.js`](webhook/demo-page.js)), then, once the real durable
 tool result comes back, a final answer citing the fetched HTTP status. No LLM
-endpoint, key, or catalog is needed — just `OBELISK_API_TOKEN`. Submit any
+endpoint, key, or catalog is needed. Submit any
 prompt at <http://localhost:9090> and watch the tool call and final answer appear. This is
 the fastest way to see the architecture end to end, and it documents the
 `llm/chat.completion` contract by example.
@@ -165,8 +163,7 @@ Everything is an env var with a default in `deployment.toml`:
 (`shared/session-state.test.js`), and the `fetch_url` tool
 (`activity/fetch-url.test.js`). `just verify` compiles and links both
 deployments against the WIT and checks them against their app policies
-(`app.toml`, `app.mock.toml`) without a running server; it needs
-`OBELISK_API_TOKEN` set. `AGENT_MODELS` is optional.
+(`app.toml`, `app.mock.toml`) without a running server. `AGENT_MODELS` is optional.
 `just e2e` ([`scripts/e2e-mock.sh`](scripts/e2e-mock.sh)) starts
 `deployment.mock.toml` on a throwaway server (non-default ports and a temporary
 database, so a dev server can keep running) and drives one turn through the

@@ -27,7 +27,6 @@ external.listening_addr = "127.0.0.1:${WEBHOOK_PORT}"
 directory = "$TMP/sqlite"
 EOF
 
-export OBELISK_API_TOKEN="${OBELISK_API_TOKEN:-$(obelisk generate token)}"
 export OBELISK_API_URL="http://127.0.0.1:${API_PORT}"
 export OBELISK_API_URL_REGEX="http://127\\.0\\.0\\.1:${API_PORT}"
 export FETCH_ALLOWED_HOST="$WEBHOOK"

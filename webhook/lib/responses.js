@@ -4,38 +4,33 @@ import { getExecutionResponses, getLatestExecutionResponses } from "./obelisk-ap
 import {
     emptyMarkers,
     projectLatestWindow,
+    scanMarkers,
     sessionEventEndsTurn,
     sessionEventList,
 } from "../../shared/session-state.js";
+import { createTimeline } from "../../shared/session-timeline.js";
 
 const SESSION_EVENTS_JOIN_SET = "n:session-events";
 
-export async function loadResponses(execId, startCursor = 0) {
-    const replies = [];
-    const toolResults = [];
-    const userMessages = [];
-    const humanInputEvents = [];
-    const agentErrors = [];
-    let sessionStarted;
-    let inputOffer;
-    let agentWorking;
-    let cursor = startCursor;
-    let including = startCursor === 0;
+export async function loadResponses(execId) {
+    const timeline = createTimeline();
+    const markers = emptyMarkers();
+    const state = { humanInputEvents: [], sessionStarted: undefined, inputOffer: undefined, agentWorking: undefined };
+    let cursor = 0;
+    let including = true;
     while (true) {
         let payload;
         try {
             payload = await getExecutionResponses(execId, SESSION_EVENTS_JOIN_SET, cursor, including, 200);
         } catch (_) { break; }
-        const responses = payload.responses || [];
-        for (const r of responses) {
+        for (const r of payload.responses || []) {
             // record-output batches several events into one response; each
             // element is applied in order, same as separate rows.
+            const createdAt = r.event?.created_at || "";
             for (const value of sessionEventList(r)) {
-                const projection = { replies, toolResults, userMessages, humanInputEvents, agentErrors, sessionStarted, inputOffer, agentWorking };
-                appendSessionEvent(projection, value, r);
-                inputOffer = projection.inputOffer;
-                agentWorking = projection.agentWorking;
-                sessionStarted = projection.sessionStarted;
+                timeline.apply(value, createdAt);
+                scanMarkers(markers, value);
+                applyLiveState(state, value, createdAt);
             }
         }
         const next = payload.scan_cursor;
@@ -44,7 +39,7 @@ export async function loadResponses(execId, startCursor = 0) {
         including = false;
         if (typeof payload.max_cursor === "number" && cursor >= payload.max_cursor) break;
     }
-    return { replies, toolResults, userMessages, humanInputEvents, agentErrors, sessionStarted, inputOffer, agentWorking, cursor };
+    return { ...state, timeline: timeline.finish(), markers };
 }
 
 // Bounded latest-window scan for the live working flag plus the terminal markers
@@ -57,10 +52,10 @@ export async function loadLatestAgentState(execId) {
     return { working: scan.working === true, markers: scan.markers };
 }
 
-function appendSessionEvent(target, event, response) {
+// Non-timeline facts: session header, current input offer, working flag, ask_user gates.
+function applyLiveState(target, event, createdAt) {
     if (!event || typeof event !== "object") return;
     if (sessionEventEndsTurn(event)) target.inputOffer = null;
-    const createdAt = response.event?.created_at || "";
     if (event.session_started) {
         const started = event.session_started;
         target.sessionStarted = {
@@ -94,64 +89,7 @@ function appendSessionEvent(target, event, response) {
             id: typeof resolved.execution_id === "string" ? resolved.execution_id : "",
             turn_index: Number.isInteger(resolved.turn_index) ? resolved.turn_index : null,
         });
-    } else if (event.user_message) {
-        const message = event.user_message;
-        target.userMessages.push({
-            id: message.id || "",
-            text: message.text || "",
-            created_at: createdAt,
-            turn_index: Number.isInteger(message.turn_index) ? message.turn_index : null,
-        });
-    } else if (event.assistant_reply) {
-        appendAssistantReply(target.replies, event.assistant_reply, createdAt);
-    } else if (event.agent_error) {
-        const error = event.agent_error;
-        target.agentErrors.push({
-            id: typeof error.id === "string" ? error.id : "",
-            text: typeof error.text === "string" ? error.text : "",
-            created_at: createdAt,
-            turn_index: Number.isInteger(error.turn_index) ? error.turn_index : null,
-        });
-        target.replies.push({
-            reply: { error: error.text },
-            created_at: createdAt,
-            turn_index: Number.isInteger(error.turn_index) ? error.turn_index : null,
-            turn_complete: true,
-        });
-    } else if (event.tool_result) {
-        target.toolResults.push(normalizeSessionToolResult(event.tool_result, createdAt));
     }
-}
-
-function appendAssistantReply(replies, rep, createdAt) {
-    if (!rep || typeof rep.content_json !== "string") return;
-    let blocks = [];
-    try { blocks = JSON.parse(rep.content_json); } catch (_) { blocks = []; }
-    if (!Array.isArray(blocks)) blocks = [];
-    const toolUses = blocks.filter((b) => b && b.type === "tool_use");
-    const text = blocks.filter((b) => b && b.type === "text").map((b) => b.text || "").join("");
-    const reply = toolUses.length > 0
-        ? { tool_calls: toolUses.map((b) => ({ id: typeof b.id === "string" ? b.id : "", name: b.name, args: b.input || {} })) }
-        : { response: text };
-    replies.push({
-        reply,
-        narration: toolUses.length > 0 ? text : "",
-        created_at: createdAt,
-        turn_index: Number.isInteger(rep.turn_index) ? rep.turn_index : null,
-        step: Number.isInteger(rep.step) ? rep.step : null,
-        duration_milliseconds: rep.duration_milliseconds,
-        turn_complete: rep.turn_complete === true,
-    });
-}
-
-function normalizeSessionToolResult(result, createdAt) {
-    const out = { id: String(result.id || ""), name: String(result.name || ""), created_at: createdAt };
-    if (result.output && "ok" in result.output) out.ok = result.output.ok;
-    else if (result.output && "error" in result.output) out.err = result.output.error;
-    out.duration_milliseconds = result.duration_milliseconds;
-    if (Number.isInteger(result.turn_index)) out.turn_index = result.turn_index;
-    if (Number.isInteger(result.step)) out.step = result.step;
-    return out;
 }
 
 export function parseJoinName(joinSetId) {

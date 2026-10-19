@@ -20,6 +20,7 @@ verify:
 test:
   node --test workflow/session-logic.test.js
   node --test shared/session-state.test.js
+  node --test shared/session-timeline.test.js
   node --test shared/model-catalog.test.js
   node --test activity/fetch-url.test.js
   node --test activity/llm-chat-mock.test.js

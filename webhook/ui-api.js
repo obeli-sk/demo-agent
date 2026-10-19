@@ -4,7 +4,7 @@
 //   GET  /                        static shell (HTML + inline JS)
 //   GET  /api/models              LLM catalog for the model dropdown
 //   GET  /api/runs                run list (sidebar)
-//   GET  /api/runs/:id            one run, normalised into a transcript
+//   GET  /api/runs/:id            one run, its notification stream folded into a timeline
 //   GET  /api/logs/:id            logs from the run and its derived executions
 //   POST /api/submit              body: {prompt, backend?, effort?} -> {execution_id}
 //   POST /api/sessions            create an empty session
@@ -17,7 +17,7 @@
 // the agent is working. This entry is the HTTP router only; server logic lives
 // in ./lib/*, the served page in ./ui/shell.js.
 
-import { jsonError, jsonResponse, nonNegativeInteger, parseQuery } from "./lib/http.js";
+import { jsonError, jsonResponse, parseQuery } from "./lib/http.js";
 import * as obelisk from "obelisk:webhook@1.0.0";
 import * as dynamic from "obelisk:webhook-dynamic@1.0.0";
 import { loadModels } from "./lib/models.js";
@@ -48,10 +48,7 @@ export default async function handle(request) {
         if (method === "GET" && path.startsWith("/api/runs/")) {
             const id = decodeURIComponent(path.substring("/api/runs/".length));
             if (!id) return jsonError(400, "missing run id");
-            return jsonResponse(await detailRun(id, {
-                workflowId: query.workflow_id || "",
-                responseCursor: nonNegativeInteger(query.response_cursor),
-            }));
+            return jsonResponse(await detailRun(id));
         }
         if (method === "GET" && path.startsWith("/api/logs/")) {
             const id = decodeURIComponent(path.substring("/api/logs/".length));

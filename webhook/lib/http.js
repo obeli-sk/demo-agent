@@ -40,8 +40,3 @@ export function parseQuery(rawUrl) {
 function decodeQueryComponent(value) {
     return decodeURIComponent(value.replace(/\+/g, " "));
 }
-
-export function nonNegativeInteger(value) {
-    const parsed = Number(value);
-    return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : 0;
-}

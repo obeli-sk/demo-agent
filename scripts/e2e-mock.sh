@@ -65,21 +65,21 @@ echo "submitted $EXECUTION_ID"
 deadline=$((SECONDS + TIMEOUT_SECS))
 while true; do
     RUN="$(curl -sf "$WEBHOOK/api/runs/$EXECUTION_ID" || true)"
-    if [[ -n "$RUN" ]] && jq -e '.transcript.replies | any(.turn_complete)' <<< "$RUN" > /dev/null; then
+    if [[ -n "$RUN" ]] && jq -e '.transcript.timeline | any(.turn_complete)' <<< "$RUN" > /dev/null; then
         break
     fi
     ((SECONDS < deadline)) || fail "turn did not complete within ${TIMEOUT_SECS}s; last run: ${RUN:0:2000}"
     sleep 1
 done
 
-jq -e '.transcript.agent_errors | length == 0' <<< "$RUN" > /dev/null \
-    || fail "agent errors: $(jq -c .transcript.agent_errors <<< "$RUN")"
-jq -e '.transcript.replies[0].reply.tool_calls[0].name == "fetch_url"' <<< "$RUN" > /dev/null \
-    || fail "first reply is not a fetch_url tool call: $(jq -c .transcript.replies[0] <<< "$RUN")"
-jq -e '.transcript.sent_results | any(.name == "fetch_url" and (.ok | fromjson | .status == 200))' <<< "$RUN" > /dev/null \
-    || fail "no successful fetch_url result: $(jq -c '.transcript.sent_results' <<< "$RUN" | head -c 2000)"
+jq -e '[.transcript.timeline[] | select(.kind == "error")] | length == 0' <<< "$RUN" > /dev/null \
+    || fail "agent errors: $(jq -c '[.transcript.timeline[] | select(.kind == "error")]' <<< "$RUN")"
+jq -e '[.transcript.timeline[] | select(.kind == "reply")][0].tool_calls[0].name == "fetch_url"' <<< "$RUN" > /dev/null \
+    || fail "first reply is not a fetch_url tool call: $(jq -c '[.transcript.timeline[] | select(.kind == "reply")][0]' <<< "$RUN")"
+jq -e '[.transcript.timeline[] | .tool_calls[]? | select(.name == "fetch_url") | .result.ok // empty] | any(fromjson | .status == 200)' <<< "$RUN" > /dev/null \
+    || fail "no successful fetch_url result: $(jq -c '.transcript.timeline' <<< "$RUN" | head -c 2000)"
 # The final answer quotes the status, which the mock reads back from history via the Obelisk API.
-FINAL="$(jq -r '.transcript.replies | map(select(.turn_complete)) | last | .reply.response' <<< "$RUN")"
+FINAL="$(jq -r '.transcript.timeline | map(select(.turn_complete)) | last | .response' <<< "$RUN")"
 [[ "$FINAL" == *"returned HTTP 200"* ]] || fail "unexpected final answer: $FINAL"
 
 echo "PASS: $FINAL"

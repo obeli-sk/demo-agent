@@ -1,5 +1,5 @@
 // Run listing (sidebar) and per-run detail assembly: normalise an execution and
-// its session-event stream into the transcript, status, and pending
+// its session-event stream into the timeline, status, and pending
 // human-gate shape the UI renders.
 
 import {
@@ -54,53 +54,28 @@ export async function listRuns() {
     return { runs };
 }
 
-export async function detailRun(id, cursorState) {
-    const resetTranscript = cursorState.workflowId !== id;
-    const responseCursor = resetTranscript ? 0 : cursorState.responseCursor;
+export async function detailRun(id) {
     const [status, walk, finalResult] = await Promise.all([
         loadStatus(id),
-        loadResponses(id, responseCursor),
+        loadResponses(id),
         loadFinalResult(id),
     ]);
     const started = walk.sessionStarted;
     const runState = pickRunState(status);
-    const markers = { lastReplyTurn: null, stepLimitTurn: null };
-    for (const reply of walk.replies) {
-        if (!reply.turn_complete) continue;
-        const turn = Number.isInteger(reply.turn_index) ? reply.turn_index : -1;
-        if (typeof reply.reply?.response === "string" && reply.reply.response) {
-            markers.lastReplyTurn = Math.max(markers.lastReplyTurn ?? -1, turn);
-        }
-    }
-    for (const error of walk.agentErrors) {
-        if (error.id.startsWith("step-limit-")) {
-            markers.stepLimitTurn = Math.max(
-                markers.stepLimitTurn ?? -1,
-                Number.isInteger(error.turn_index) ? error.turn_index : -1,
-            );
-        }
-    }
     return {
         id,
         ...runState,
-        ...projectRun(runState, walk.agentWorking === true, markers),
+        ...projectRun(runState, walk.agentWorking === true, walk.markers),
         created_at: status?.created_at || "",
-        prompt: started?.prompt || null,
         backend: started?.backend || null,
         effort: started?.effort || null,
         system_prompt: started?.system_prompt || null,
         transcript: {
-            reset: resetTranscript,
-            workflow_id: id,
-            replies: walk.replies,
-            user_messages: walk.userMessages,
+            timeline: walk.timeline,
             human_input_events: walk.humanInputEvents,
-            agent_errors: walk.agentErrors,
-            session_started: walk.sessionStarted,
-            sent_results: walk.toolResults,
+            session_started: started,
             input_offer: walk.inputOffer,
             agent_working: walk.agentWorking,
-            response_cursor: walk.cursor,
         },
         final_result: finalResult,
     };

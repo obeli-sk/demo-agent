@@ -243,7 +243,6 @@ function renderDetail() {
   var t = d.transcript || {};
   toolCardSeq = 0;
   var html = "";
-  if (d.prompt) html += bubble("prompt", "user", d.prompt);
   html += renderTimeline(t);
   var pending = pendingAsk(t.human_input_events || []);
   if (pending) html += renderAskForm(pending);
@@ -281,35 +280,9 @@ function renderDetail() {
   el("stop").hidden = !(working && offer && offer.id);
 }
 
+// The timeline arrives already ordered and paired (shared/session-timeline.js).
 function renderTimeline(t) {
-  var users = t.user_messages || [];
-  var replies = t.replies || [];
-  var results = {};
-  (t.sent_results || []).forEach(function (r) { results[toolResultKey(r.turn_index, r.step, r.id)] = r; });
-  var sessionStart = t.session_started && t.session_started.created_at;
-  var maxTurn = 0;
-  users.concat(replies).forEach(function (x) { if (typeof x.turn_index === "number") maxTurn = Math.max(maxTurn, x.turn_index); });
-  var html = "";
-  for (var turn = 0; turn <= maxTurn; turn++) {
-    var turnUsers = users.filter(function (m) { return (m.turn_index || 0) === turn; });
-    turnUsers.forEach(function (m) { html += bubble("user", "user", m.text); });
-    // The turn starts when its prompt was recorded (turn 0's prompt is the
-    // workflow's start arg, so fall back to session start). The per-turn latency
-    // is real wall-clock from that point to the turn's final reply, so it
-    // captures the whole turn - LLM steps, tool calls, waits, and replays -
-    // unlike a per-step duration measured inside the workflow.
-    var startTs = turnUsers.length ? turnUsers[0].created_at : (turn === 0 ? sessionStart : null);
-    var turnReplies = replies.filter(function (r) { return (r.turn_index || 0) === turn; })
-      .sort(function (a, b) { return (a.step || 0) - (b.step || 0); });
-    turnReplies.forEach(function (r, idx) {
-      var latency = (idx === turnReplies.length - 1 && r.turn_complete) ? turnLatency(startTs, r.created_at) : "";
-      html += renderReply(r, results, latency);
-    });
-  }
-  return html;
-}
-function toolResultKey(turn, step, id) {
-  return JSON.stringify([turn, step, id]);
+  return (t.timeline || []).map(renderEntry).join("");
 }
 // Human-readable duration: ms under a second, then s, then m/s once it is long
 // enough that a bare millisecond (or even second) count reads terribly.
@@ -321,29 +294,15 @@ function fmtDur(ms) {
   var m = Math.floor(s / 60), rem = Math.round(s % 60);
   return rem ? m + "m " + rem + "s" : m + "m";
 }
-function turnLatency(startIso, endIso) {
-  var s = parseTs(startIso), e = parseTs(endIso);
-  if (!isFinite(s) || !isFinite(e) || e < s) return "";
-  return fmtDur(e - s);
-}
-// Obelisk timestamps can carry sub-millisecond precision Date.parse rejects;
-// trim the fraction to 3 digits before parsing.
-function parseTs(iso) {
-  if (typeof iso !== "string") return NaN;
-  var t = Date.parse(iso);
-  if (isFinite(t)) return t;
-  return Date.parse(iso.replace(/(\\.\\d{3})\\d+(?=Z|[+-]\\d\\d:?\\d\\d)/, "$1"));
-}
-function renderReply(r, results, latency) {
-  var rep = r.reply || {};
+function renderEntry(e) {
+  var latency = fmtDur(e.turn_latency_ms);
   var lat = latency ? '<div class="turn-latency">turn: ' + esc(latency) + "</div>" : "";
-  if (rep.error) return bubble("agent", "err", rep.error) + lat;
-  if (typeof rep.response === "string") return bubble("agent", "", rep.response) + lat;
+  if (e.kind === "user") return bubble("user", "user", e.text);
+  if (e.kind === "error") return bubble("agent", "err", e.text) + lat;
+  if (typeof e.response === "string") return bubble("agent", "", e.response) + lat;
   var html = "";
-  if (r.narration) html += bubble("agent", "", r.narration);
-  (rep.tool_calls || []).forEach(function (call) {
-    html += renderTool(call, results[toolResultKey(r.turn_index, r.step, call.id)]);
-  });
+  if (e.narration) html += bubble("agent", "", e.narration);
+  (e.tool_calls || []).forEach(function (call) { html += renderTool(call, call.result); });
   return html + lat;
 }
 function renderTool(call, result) {

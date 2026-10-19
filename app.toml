@@ -1,4 +1,4 @@
-app_name = "agent-template"
+app_name = "demo-agent"
 
 [secrets]
 # LLM endpoint bearer (unset for a keyless local backend).

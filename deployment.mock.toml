@@ -50,11 +50,11 @@ wit = "wit"
 location = "activity/llm-chat-mock.js"
 exec.lock_expiry.seconds = 30
 env_vars = [
-  { key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" },
+  { key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" },
   { key = "MOCK_FETCH_URL", value = "${MOCK_FETCH_URL:-http://127.0.0.1:9090/demo}" },
 ]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL:-http://127.0.0.1:5005}"
+pattern = "${OBELISK_API_URL}"
 methods = ["POST"]
 request_url_regex = "^POST https?://[^/]+/v1/executions/events/batch$"
 secrets = ["OBELISK_API_TOKEN"]
@@ -78,9 +78,9 @@ name = "control_cancel"
 ffqn = "demo-agent:tools/control.cancel-execution"
 wit = "wit"
 location = "activity/control-cancel.js"
-env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" }]
+env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL:-http://127.0.0.1:5005}"
+pattern = "${OBELISK_API_URL}"
 methods = ["GET", "PUT"]
 request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/cancel|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
 secrets = ["OBELISK_API_TOKEN"]
@@ -91,9 +91,9 @@ name = "control_stub"
 ffqn = "demo-agent:tools/control.stub-execution"
 wit = "wit"
 location = "activity/control-stub.js"
-env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" }]
+env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL:-http://127.0.0.1:5005}"
+pattern = "${OBELISK_API_URL}"
 methods = ["GET", "PUT"]
 request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/stub|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
 secrets = ["OBELISK_API_TOKEN"]
@@ -148,12 +148,12 @@ routes = [
 # AGENT_MODELS defaults to a mock entry here (in deployment.toml it is required)
 # so the mock demo needs no environment at all.
 env_vars = [
-  { key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" },
-  { key = "OBELISK_UI_URL", value = "${OBELISK_UI_URL:-http://127.0.0.1:8080}" },
+  { key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" },
+  { key = "OBELISK_UI_URL", value = "${OBELISK_UI_URL}" },
   { key = "AGENT_MODELS", value = '${AGENT_MODELS:-[{"id":"mock","label":"mock LLM","api_type":"mock"}]}' },
 ]
 [[webhook_endpoint_js.allowed_host]]
-pattern = "${OBELISK_API_URL:-http://127.0.0.1:5005}"
+pattern = "${OBELISK_API_URL}"
 methods = ["GET"]
 request_url_regex = "^GET https?://[^/]+/v1/executions"
 secrets = ["OBELISK_API_TOKEN"]

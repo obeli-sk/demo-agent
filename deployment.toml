@@ -44,7 +44,8 @@ ${TOOLS_JSON:-[
 # The only way the agent talks to a model. GET /v1/models supplies the catalog;
 # AGENT_MODELS is an optional fallback; each entry routes to a wire API (anthropic-messages,
 # openai-chat-completions, openai-responses) under the shared LLM_BASE_URL
-# origin, authenticated by the single LLM_API_KEY secret (unset for keyless).
+# origin (also the allowed_host pattern) plus the optional LLM_API_PREFIX (e.g. "/api"
+# for OpenRouter), authenticated by the single LLM_API_KEY secret (unset for keyless).
 [[activity_js]]
 name = "llm_chat"
 ffqn = "agent-template:llm/chat.completion"
@@ -55,6 +56,7 @@ max_retries = 3
 env_vars = [
   { key = "AGENT_MODELS", value = "${AGENT_MODELS:-[]}" },
   { key = "LLM_BASE_URL", value = "${LLM_BASE_URL:-http://127.0.0.1:9190}" },
+  { key = "LLM_API_PREFIX", value = "${LLM_API_PREFIX:-}" },
   { key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" },
 ]
 [[activity_js.allowed_host]]
@@ -170,6 +172,7 @@ env_vars = [
   { key = "OBELISK_UI_URL", value = "${OBELISK_UI_URL:-http://127.0.0.1:8080}" },
   { key = "AGENT_MODELS", value = "${AGENT_MODELS:-[]}" },
   { key = "LLM_BASE_URL", value = "${LLM_BASE_URL:-http://127.0.0.1:9190}" },
+  { key = "LLM_API_PREFIX", value = "${LLM_API_PREFIX:-}" },
 ]
 # Read-only polling (statuses, responses, logs) run as direct fetches from the
 # webhook instead of one child activity per call.

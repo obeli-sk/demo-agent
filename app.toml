@@ -12,6 +12,7 @@ OBELISK_API_TOKEN = { type = "internal" }
 AGENT_MODELS = { optional = true }
 FETCH_ALLOWED_HOST = { optional = true }
 LLM_BASE_URL = { optional = true }
+LLM_API_PREFIX = { optional = true }
 MAX_STEPS = { optional = true }
 OBELISK_API_URL = { optional = true }
 OBELISK_API_URL_REGEX = { optional = true }

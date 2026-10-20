@@ -1,4 +1,4 @@
-// Web UI for the agent template.
+// Web UI for the demo agent.
 //
 // Server side: a small JSON API plus one static HTML shell that boots the SPA.
 //   GET  /                        static shell (HTML + inline JS)

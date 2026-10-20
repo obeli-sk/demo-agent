@@ -1,4 +1,4 @@
-// agent-template:workflow/workflow.run-cancellable:
+// demo-agent:workflow/workflow.run-cancellable:
 //   func(prompt: string, model: option<string>, effort: option<string>)
 //     -> result<_, string>
 // The `-cancellable` suffix is what makes Obelisk allow an operator (the UI's
@@ -22,16 +22,16 @@
 // the host-facing orchestration. WIT record/variant fields cross into JS as
 // snake_case (max_steps, system_prompt, turn_index, ...).
 
-import { discover } from "agent-template:config/config";
+import { discover } from "demo-agent:config/config";
 import * as obelisk from "obelisk:workflow@1.0.0";
-import { completionSubmit } from "agent-template:llm-obelisk-ext/chat";
+import { completionSubmit } from "demo-agent:llm-obelisk-ext/chat";
 import {
     askUserSubmit,
     injectionSubmit,
     recordOutputAwaitNext,
     recordOutputSubmit,
-} from "agent-template:stub-obelisk-ext/stub";
-import { recordOutputStub } from "agent-template:stub-obelisk-stub/stub";
+} from "demo-agent:stub-obelisk-ext/stub";
+import { recordOutputStub } from "demo-agent:stub-obelisk-stub/stub";
 import {
     EMPTY_REPLY_NUDGE,
     buildToolsJson,

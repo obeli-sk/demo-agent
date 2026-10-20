@@ -1,4 +1,4 @@
-// agent-template:tools/control.stub-execution:
+// demo-agent:tools/control.stub-execution:
 //   func(execution-id: string, result-json: string) -> result<action-result, tool-error>
 //
 // PUT /v1/executions/<id>/stub on the agent's own Obelisk instance: fulfils an

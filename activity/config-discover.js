@@ -1,4 +1,4 @@
-// agent-template:config/config.discover:
+// demo-agent:config/config.discover:
 //   func(execution-id: string, backend: string, effort: string)
 //     -> result<record {
 //          max-steps: u32,

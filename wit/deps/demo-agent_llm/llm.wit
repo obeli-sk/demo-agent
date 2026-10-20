@@ -1,4 +1,4 @@
-package agent-template:llm;
+package demo-agent:llm;
 
 // Each call carries new messages and the accepted LLM execution IDs.
 // The activity reconstructs history and uses the wire API in AGENT_MODELS.

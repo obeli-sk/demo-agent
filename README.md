@@ -1,4 +1,4 @@
-# agent-template
+# demo-agent
 
 > [!NOTE]
 > **Preview / template.** A minimal starting point for building an agent on
@@ -37,7 +37,7 @@ config.discover (activity/config-discover.js)          ── tools + prompt + b
 The contract between all of these is the WIT in `wit/`. The notification
 protocol — the `session-event` stream the workflow publishes and the
 `session-input` the UI injects — is defined in
-[`wit/deps/agent-template_stub/stub.wit`](wit/deps/agent-template_stub/stub.wit),
+[`wit/deps/demo-agent_stub/stub.wit`](wit/deps/demo-agent_stub/stub.wit),
 the source of truth for both sides.
 
 ## Run
@@ -122,7 +122,7 @@ Three edits:
    (or set the `TOOLS_JSON` env var):
 
    ```json
-   { "name": "my_tool", "ffqn": "agent-template:tools/http.my-tool",
+   { "name": "my_tool", "ffqn": "demo-agent:tools/http.my-tool",
      "description": "what it does", "schema": { "type": "object", "properties": { ... } } }
    ```
 

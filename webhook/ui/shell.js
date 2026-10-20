@@ -15,7 +15,7 @@ const SHELL_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>agent-template</title>
+<title>demo-agent</title>
 <style>
   :root {
     --bg:#fafafa; --panel:#fff; --line:#e5e5e5; --muted:#777;
@@ -90,7 +90,7 @@ const SHELL_HTML = `<!doctype html>
 <body>
 <aside>
   <header>
-    <h1>agent-template</h1>
+    <h1>demo-agent</h1>
     <button id="new-convo">New conversation</button>
   </header>
   <div id="runs"></div>

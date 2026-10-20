@@ -1,4 +1,4 @@
-package agent-template:tools;
+package demo-agent:tools;
 
 // Control-plane activities the webhook UI calls to act on a running session:
 // cancel the whole run, or fulfil an outstanding stub offer (a user-input

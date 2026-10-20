@@ -1,4 +1,4 @@
-// agent-template:llm/chat.completion (MOCK)
+// demo-agent:llm/chat.completion (MOCK)
 //
 // A deterministic stand-in for activity/llm-chat.js: same interface, but instead
 // of calling a provider it scripts one turn so the whole loop can be

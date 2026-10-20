@@ -1,4 +1,4 @@
-package agent-template:stub;
+package demo-agent:stub;
 
 // SOURCE OF TRUTH for the durable notification protocol. The workflow
 // (workflow/session.js) self-stubs each `session-event` onto a "session-events"

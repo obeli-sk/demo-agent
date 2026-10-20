@@ -1,4 +1,4 @@
-// agent-template:tools/control.cancel-execution:
+// demo-agent:tools/control.cancel-execution:
 //   func(execution-id: string) -> result<action-result, tool-error>
 //
 // PUT /v1/executions/<id>/cancel on the agent's own Obelisk instance. Backs the

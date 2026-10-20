@@ -9,8 +9,8 @@
 // Adding a tool: write the activity, add its `[[activity_js]]` block to the
 // deployment, import it here, and register its FFQN in TOOLS_JSON.
 
-import { fetchUrl } from "agent-template:tools/http";
+import { fetchUrl } from "demo-agent:tools/http";
 
 export const TOOL_IMPLS = new Map([
-    ["agent-template:tools/http.fetch-url", fetchUrl],
+    ["demo-agent:tools/http.fetch-url", fetchUrl],
 ]);

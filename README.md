@@ -1,4 +1,4 @@
-# agent-template
+# demo-agent
 
 > [!NOTE]
 > **Preview / template.** A minimal starting point for building an agent on
@@ -37,7 +37,7 @@ config.discover (activity/config-discover.js)          ── tools + prompt + b
 The contract between all of these is the WIT in `wit/`. The notification
 protocol — the `session-event` stream the workflow publishes and the
 `session-input` the UI injects — is defined in
-[`wit/deps/agent-template_stub/stub.wit`](wit/deps/agent-template_stub/stub.wit),
+[`wit/deps/demo-agent_stub/stub.wit`](wit/deps/demo-agent_stub/stub.wit),
 the source of truth for both sides.
 
 ## Run
@@ -77,12 +77,13 @@ the fastest way to see the architecture end to end, and it documents the
 ## LLM endpoint
 
 One endpoint serves the whole catalog: the fallback JSON catalog `AGENT_MODELS`
-(optional), the origin `LLM_BASE_URL`, and an optional bearer `LLM_API_KEY`. Each
+(optional), the origin `LLM_BASE_URL`, an optional path prefix `LLM_API_PREFIX`, and
+an optional bearer `LLM_API_KEY`. Each
 catalog entry is `{ id, label, api_type, path?, wire_model, max_tokens? }`, where
 `api_type` is `anthropic-messages`, `openai-chat-completions`, or
 `openai-responses`.
 
-The model picker and LLM activity first try `GET <LLM_BASE_URL>/v1/models`,
+The model picker and LLM activity first try `GET <LLM_BASE_URL><LLM_API_PREFIX>/v1/models`,
 using `LLM_API_KEY` when configured. A nonempty response supplies the models;
 matching configured entries keep their aliases, adapters, provider paths, and
 token limits. New models use OpenAI chat completions, and advertised defaults
@@ -96,8 +97,9 @@ The local endpoint is the sibling
 on `:9190`. Its discovery endpoint supplies the model catalog; no local
 fallback file is needed.
 
-An optional fallback catalog ships for [OpenRouter](https://openrouter.ai):
-set `AGENT_MODELS="$(cat models.openrouter.json)"` and configure `LLM_API_KEY`.
+For [OpenRouter](https://openrouter.ai), set `LLM_BASE_URL=https://openrouter.ai`,
+`LLM_API_PREFIX=/api` and `LLM_API_KEY`. Discovery works there; an optional fallback
+catalog ships as `AGENT_MODELS="$(cat models.openrouter.json)"`.
 
 Any OpenAI/Anthropic-compatible endpoint (vLLM, Ollama, the provider directly)
 works: point `LLM_BASE_URL` at it and configure `AGENT_MODELS` when its discovery
@@ -120,7 +122,7 @@ Three edits:
    (or set the `TOOLS_JSON` env var):
 
    ```json
-   { "name": "my_tool", "ffqn": "agent-template:tools/http.my-tool",
+   { "name": "my_tool", "ffqn": "demo-agent:tools/http.my-tool",
      "description": "what it does", "schema": { "type": "object", "properties": { ... } } }
    ```
 
@@ -148,7 +150,8 @@ Everything is an env var with a default in `deployment.toml`:
 | Var | Default | Meaning |
 |-----|---------|---------|
 | `AGENT_MODELS` | `[]` | Fallback LLM catalog JSON |
-| `LLM_BASE_URL` | `http://127.0.0.1:9190` | LLM endpoint origin |
+| `LLM_BASE_URL` | `http://127.0.0.1:9190` | LLM endpoint origin, without a path |
+| `LLM_API_PREFIX` | (empty) | path before `/v1/...`, e.g. `/api` for OpenRouter |
 | `LLM_API_KEY` | (unset) | LLM bearer, keyless if unset |
 | `MAX_STEPS` | `10` | model invocations per turn |
 | `TOOLS_JSON` | `[fetch_url]` | model-facing tool registry |

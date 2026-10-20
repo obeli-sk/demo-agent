@@ -1,4 +1,4 @@
-# agent-template: a minimal, JS-only durable Obelisk agent.
+# demo-agent: a minimal, JS-only durable Obelisk agent.
 #
 # One workflow (the agent loop), a multi-provider LLM client, one example HTTP
 # tool (fetch_url), the config/discovery activity, two control-plane activities
@@ -14,7 +14,7 @@
 # of them from the environment to retune the linked tools, prompt and budget.
 [[activity_js]]
 name = "config_discover"
-ffqn = "agent-template:config/config.discover"
+ffqn = "demo-agent:config/config.discover"
 wit = "wit"
 location = "activity/config-discover.js"
 exec.lock_expiry.seconds = 30
@@ -24,7 +24,7 @@ env_vars = [
 ${TOOLS_JSON:-[
   {
     "name": "fetch_url",
-    "ffqn": "agent-template:tools/http.fetch-url",
+    "ffqn": "demo-agent:tools/http.fetch-url",
     "description": "HTTP GET a URL and return its status, headers, and body (text).",
     "schema": {
       "type": "object",
@@ -44,10 +44,11 @@ ${TOOLS_JSON:-[
 # The only way the agent talks to a model. GET /v1/models supplies the catalog;
 # AGENT_MODELS is an optional fallback; each entry routes to a wire API (anthropic-messages,
 # openai-chat-completions, openai-responses) under the shared LLM_BASE_URL
-# origin, authenticated by the single LLM_API_KEY secret (unset for keyless).
+# origin (also the allowed_host pattern) plus the optional LLM_API_PREFIX (e.g. "/api"
+# for OpenRouter), authenticated by the single LLM_API_KEY secret (unset for keyless).
 [[activity_js]]
 name = "llm_chat"
-ffqn = "agent-template:llm/chat.completion"
+ffqn = "demo-agent:llm/chat.completion"
 wit = "wit"
 location = "activity/llm-chat.js"
 exec.lock_expiry.minutes = 10
@@ -55,6 +56,7 @@ max_retries = 3
 env_vars = [
   { key = "AGENT_MODELS", value = "${AGENT_MODELS:-[]}" },
   { key = "LLM_BASE_URL", value = "${LLM_BASE_URL:-http://127.0.0.1:9190}" },
+  { key = "LLM_API_PREFIX", value = "${LLM_API_PREFIX:-}" },
   { key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" },
 ]
 [[activity_js.allowed_host]]
@@ -78,7 +80,7 @@ replace_in = ["headers"]
 # activity, import it in workflow/tools.js, and register it in TOOLS_JSON.
 [[activity_js]]
 name = "tool_fetch_url"
-ffqn = "agent-template:tools/http.fetch-url"
+ffqn = "demo-agent:tools/http.fetch-url"
 params = [{ name = "args-json", type = "string" }]
 return_type = "result<string, string>"
 location = "activity/fetch-url.js"
@@ -92,7 +94,7 @@ methods = ["GET"]
 # Both talk to the agent's own Obelisk instance (OBELISK_API_URL).
 [[activity_js]]
 name = "control_cancel"
-ffqn = "agent-template:tools/control.cancel-execution"
+ffqn = "demo-agent:tools/control.cancel-execution"
 wit = "wit"
 location = "activity/control-cancel.js"
 env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" }]
@@ -105,7 +107,7 @@ replace_in = ["headers"]
 
 [[activity_js]]
 name = "control_stub"
-ffqn = "agent-template:tools/control.stub-execution"
+ffqn = "demo-agent:tools/control.stub-execution"
 wit = "wit"
 location = "activity/control-stub.js"
 env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" }]
@@ -122,23 +124,23 @@ replace_in = ["headers"]
 # stream the UI reads; `ask-user` is the human-in-the-loop gate.
 [[activity_stub]]
 name = "stub_injection"
-ffqn = "agent-template:stub/stub.injection"
+ffqn = "demo-agent:stub/stub.injection"
 wit = "wit"
 
 [[activity_stub]]
 name = "stub_record_output"
-ffqn = "agent-template:stub/stub.record-output"
+ffqn = "demo-agent:stub/stub.record-output"
 wit = "wit"
 
 [[activity_stub]]
 name = "stub_ask_user"
-ffqn = "agent-template:stub/stub.ask-user"
+ffqn = "demo-agent:stub/stub.ask-user"
 wit = "wit"
 
 # --- The agent loop -----------------------------------------------------------
 [[workflow_js]]
 name = "session"
-ffqn = "agent-template:workflow/workflow.run-cancellable"
+ffqn = "demo-agent:workflow/workflow.run-cancellable"
 location = "workflow/session.js"
 params = [
   { name = "prompt", type = "string" },
@@ -170,6 +172,7 @@ env_vars = [
   { key = "OBELISK_UI_URL", value = "${OBELISK_UI_URL:-http://127.0.0.1:8080}" },
   { key = "AGENT_MODELS", value = "${AGENT_MODELS:-[]}" },
   { key = "LLM_BASE_URL", value = "${LLM_BASE_URL:-http://127.0.0.1:9190}" },
+  { key = "LLM_API_PREFIX", value = "${LLM_API_PREFIX:-}" },
 ]
 # Read-only polling (statuses, responses, logs) run as direct fetches from the
 # webhook instead of one child activity per call.

@@ -1,4 +1,4 @@
-// agent-template:tools/http.fetch-url:
+// demo-agent:tools/http.fetch-url:
 //   func(args-json: string) -> result<string, string>
 //
 // A model-facing HTTP GET tool. `args-json` is the tool_use input the workflow

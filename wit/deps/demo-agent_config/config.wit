@@ -1,4 +1,4 @@
-package agent-template:config;
+package demo-agent:config;
 
 // Session settings the workflow discovers once at start
 // (activity/config-discover.js backs this, reading the MAX_STEPS / TOOLS_JSON /

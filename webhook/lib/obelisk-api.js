@@ -7,7 +7,7 @@
 // so these GETs run as plain fetches. Mutations (cancel/stub) stay durable
 // native `control` calls.
 
-import * as control from "agent-template:tools/control";
+import * as control from "demo-agent:tools/control";
 import { activityJson } from "./http.js";
 
 const API_BASE = (process.env["OBELISK_API_URL"] || "http://127.0.0.1:5005").replace(/\/$/, "");

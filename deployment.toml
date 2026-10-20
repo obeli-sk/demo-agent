@@ -57,10 +57,10 @@ env_vars = [
   { key = "AGENT_MODELS", value = "${AGENT_MODELS:-[]}" },
   { key = "LLM_BASE_URL", value = "${LLM_BASE_URL:-http://127.0.0.1:9190}" },
   { key = "LLM_API_PREFIX", value = "${LLM_API_PREFIX:-}" },
-  { key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" },
+  { key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" },
 ]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL:-http://127.0.0.1:5005}"
+pattern = "${OBELISK_API_URL}"
 methods = ["POST"]
 request_url_regex = "^POST https?://[^/]+/v1/executions/events/batch$"
 secrets = ["OBELISK_API_TOKEN"]
@@ -97,9 +97,9 @@ name = "control_cancel"
 ffqn = "demo-agent:tools/control.cancel-execution"
 wit = "wit"
 location = "activity/control-cancel.js"
-env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" }]
+env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL:-http://127.0.0.1:5005}"
+pattern = "${OBELISK_API_URL}"
 methods = ["GET", "PUT"]
 request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/cancel|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
 secrets = ["OBELISK_API_TOKEN"]
@@ -110,9 +110,9 @@ name = "control_stub"
 ffqn = "demo-agent:tools/control.stub-execution"
 wit = "wit"
 location = "activity/control-stub.js"
-env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" }]
+env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL:-http://127.0.0.1:5005}"
+pattern = "${OBELISK_API_URL}"
 methods = ["GET", "PUT"]
 request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/stub|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
 secrets = ["OBELISK_API_TOKEN"]
@@ -168,8 +168,8 @@ routes = [
   { methods = ["POST"], route = "/api/input/:execution-id" },
 ]
 env_vars = [
-  { key = "OBELISK_API_URL", value = "${OBELISK_API_URL:-http://127.0.0.1:5005}" },
-  { key = "OBELISK_UI_URL", value = "${OBELISK_UI_URL:-http://127.0.0.1:8080}" },
+  { key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" },
+  { key = "OBELISK_UI_URL", value = "${OBELISK_UI_URL}" },
   { key = "AGENT_MODELS", value = "${AGENT_MODELS:-[]}" },
   { key = "LLM_BASE_URL", value = "${LLM_BASE_URL:-http://127.0.0.1:9190}" },
   { key = "LLM_API_PREFIX", value = "${LLM_API_PREFIX:-}" },
@@ -177,7 +177,7 @@ env_vars = [
 # Read-only polling (statuses, responses, logs) run as direct fetches from the
 # webhook instead of one child activity per call.
 [[webhook_endpoint_js.allowed_host]]
-pattern = "${OBELISK_API_URL:-http://127.0.0.1:5005}"
+pattern = "${OBELISK_API_URL}"
 methods = ["GET"]
 request_url_regex = "^GET https?://[^/]+/v1/executions"
 secrets = ["OBELISK_API_TOKEN"]

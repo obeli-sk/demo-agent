@@ -145,7 +145,8 @@ Network reach is exactly what the tool's `allowed_host` grants (and its mirror i
 
 ## Configuration
 
-Everything is an env var with a default in `deployment.toml`:
+Runtime settings use env vars with defaults in `deployment.toml`. Self API and Web UI
+addresses are internal public-env sources declared in `app.toml`:
 
 | Var | Default | Meaning |
 |-----|---------|---------|
@@ -157,7 +158,12 @@ Everything is an env var with a default in `deployment.toml`:
 | `TOOLS_JSON` | `[fetch_url]` | model-facing tool registry |
 | `SYSTEM_PROMPT` | built-in | base system prompt |
 | `FETCH_ALLOWED_HOST` | `https://obeli.sk` | fetch_url's allowed host |
-| `OBELISK_API_URL` | `http://127.0.0.1:5005` | the agent's own instance (UI + control) |
+| `OBELISK_API_URL` | API listener URL | Obelisk supplies the agent's own instance (UI + control) |
+| `OBELISK_UI_URL` | Web UI listener URL | Obelisk supplies browser links; ObeliskNet sets the public URL |
+
+Internal sources ignore same-named process environment variables. To customize the
+Web UI links, set `webui.public_url` in `server.toml`. To supply a custom self API
+address, change its app declaration to an ordinary env-backed entry.
 
 ## Tests
 

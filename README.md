@@ -161,10 +161,6 @@ addresses are internal public-env sources declared in `app.toml`:
 | `OBELISK_API_URL` | API listener URL | Obelisk supplies the agent's own instance (UI + control) |
 | `OBELISK_UI_URL` | Web UI listener URL | Obelisk supplies browser links; ObeliskNet sets the public URL |
 
-Internal sources ignore same-named process environment variables. To customize the
-Web UI links, set `webui.public_url` in `server.toml`. To supply a custom self API
-address, change its app declaration to an ordinary env-backed entry.
-
 ## Tests
 
 `just test` runs the offline unit suites (`node --test`): the pure loop helpers

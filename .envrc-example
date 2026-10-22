@@ -5,8 +5,7 @@ export LLM_BASE_URL=http://127.0.0.1:9190
 
 # OpenRouter with an optional fallback catalog (see README "LLM endpoint"):
 # export AGENT_MODELS="$(cat models.openrouter.json)"
-# export LLM_BASE_URL="https://openrouter.ai"
-# export LLM_API_PREFIX=/api
+# export LLM_BASE_URL="https://openrouter.ai/api"
 # export LLM_API_KEY="..."
 
 # Optional session config (defaults live in deployment.toml):

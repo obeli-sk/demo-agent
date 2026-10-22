@@ -77,13 +77,13 @@ the fastest way to see the architecture end to end, and it documents the
 ## LLM endpoint
 
 One endpoint serves the whole catalog: the fallback JSON catalog `AGENT_MODELS`
-(optional), the origin `LLM_BASE_URL`, an optional path prefix `LLM_API_PREFIX`, and
-an optional bearer `LLM_API_KEY`. Each
+(optional), the base URL `LLM_BASE_URL` (including any gateway path before
+`/v1`), and an optional bearer `LLM_API_KEY`. Each
 catalog entry is `{ id, label, api_type, path?, wire_model, max_tokens? }`, where
 `api_type` is `anthropic-messages`, `openai-chat-completions`, or
 `openai-responses`.
 
-The model picker and LLM activity first try `GET <LLM_BASE_URL><LLM_API_PREFIX>/v1/models`,
+The model picker and LLM activity first try `GET <LLM_BASE_URL>/v1/models`,
 using `LLM_API_KEY` when configured. A nonempty response supplies the models;
 matching configured entries keep their aliases, adapters, provider paths, and
 token limits. New models use OpenAI chat completions, and advertised defaults
@@ -97,8 +97,8 @@ The local endpoint is the sibling
 on `:9190`. Its discovery endpoint supplies the model catalog; no local
 fallback file is needed.
 
-For [OpenRouter](https://openrouter.ai), set `LLM_BASE_URL=https://openrouter.ai`,
-`LLM_API_PREFIX=/api` and `LLM_API_KEY`. Discovery works there; an optional fallback
+For [OpenRouter](https://openrouter.ai), set `LLM_BASE_URL=https://openrouter.ai/api`
+and `LLM_API_KEY`. Discovery works there; an optional fallback
 catalog ships as `AGENT_MODELS="$(cat models.openrouter.json)"`.
 
 Any OpenAI/Anthropic-compatible endpoint (vLLM, Ollama, the provider directly)
@@ -151,13 +151,12 @@ addresses are internal public-env sources declared in `app.toml`:
 | Var | Default | Meaning |
 |-----|---------|---------|
 | `AGENT_MODELS` | `[]` | Fallback LLM catalog JSON |
-| `LLM_BASE_URL` | `http://127.0.0.1:9190` | LLM endpoint origin, without a path |
-| `LLM_API_PREFIX` | (empty) | path before `/v1/...`, e.g. `/api` for OpenRouter |
+| `LLM_BASE_URL` | `http://127.0.0.1:9190` | LLM base URL before `/v1/...`, e.g. `https://openrouter.ai/api` |
 | `LLM_API_KEY` | (unset) | LLM bearer, keyless if unset |
 | `MAX_STEPS` | `10` | model invocations per turn |
 | `TOOLS_JSON` | `[fetch_url]` | model-facing tool registry |
 | `SYSTEM_PROMPT` | built-in | base system prompt |
-| `FETCH_ALLOWED_HOST` | `https://obeli.sk` | fetch_url's allowed host |
+| `FETCH_ALLOWED_HOST` | `https://obeli.sk` | fetch_url's allowed host pattern (wildcards allowed) |
 | `OBELISK_API_URL` | API listener URL | Obelisk supplies the agent's own instance (UI + control) |
 | `OBELISK_UI_URL` | Web UI listener URL | Obelisk supplies browser links; ObeliskNet sets the public URL |
 

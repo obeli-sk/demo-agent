@@ -44,8 +44,8 @@ ${TOOLS_JSON:-[
 # The only way the agent talks to a model. GET /v1/models supplies the catalog;
 # AGENT_MODELS is an optional fallback; each entry routes to a wire API (anthropic-messages,
 # openai-chat-completions, openai-responses) under the shared LLM_BASE_URL
-# origin (also the allowed_host pattern) plus the optional LLM_API_PREFIX (e.g. "/api"
-# for OpenRouter), authenticated by the single LLM_API_KEY secret (unset for keyless).
+# (including any gateway prefix, e.g. "https://openrouter.ai/api"; also the
+# allowed_host url_prefix), authenticated by the single LLM_API_KEY secret (unset for keyless).
 [[activity_js]]
 name = "llm_chat"
 ffqn = "demo-agent:llm/chat.completion"
@@ -56,19 +56,24 @@ max_retries = 3
 env_vars = [
   { key = "AGENT_MODELS", value = "${AGENT_MODELS:-[]}" },
   { key = "LLM_BASE_URL", value = "${LLM_BASE_URL:-http://127.0.0.1:9190}" },
-  { key = "LLM_API_PREFIX", value = "${LLM_API_PREFIX:-}" },
   { key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" },
 ]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL}"
+url_prefix = "${OBELISK_API_URL}"
 methods = ["POST"]
-request_url_regex = "^POST https?://[^/]+/v1/executions/events/batch$"
+url_regex_suffix = "/v1/executions/events/batch$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 [[activity_js.allowed_host]]
-pattern = "${LLM_BASE_URL:-http://127.0.0.1:9190}"
-methods = ["GET", "POST"]
-request_url_regex = "^GET http[s]?://[^/]+(/[^/]+)*/v1/models$|^POST http[s]?://[^/]+(/[^/]+)*/v1/(messages|chat/completions|responses)$"
+url_prefix = "${LLM_BASE_URL:-http://127.0.0.1:9190}"
+methods = ["GET"]
+url_regex_suffix = "/v1/models$"
+secrets = [{ name = "LLM_API_KEY", optional = true }]
+replace_in = ["headers"]
+[[activity_js.allowed_host]]
+url_prefix = "${LLM_BASE_URL:-http://127.0.0.1:9190}"
+methods = ["POST"]
+url_regex_suffix = "(/[^/]+)*/v1/(messages|chat/completions|responses)$"
 secrets = [{ name = "LLM_API_KEY", optional = true }]
 replace_in = ["headers"]
 
@@ -99,9 +104,15 @@ wit = "wit"
 location = "activity/control-cancel.js"
 env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL}"
-methods = ["GET", "PUT"]
-request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/cancel|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
+url_prefix = "${OBELISK_API_URL}"
+methods = ["PUT"]
+url_regex_suffix = "/v1/executions/E_[^/]+/cancel$"
+secrets = ["OBELISK_API_TOKEN"]
+replace_in = ["headers"]
+[[activity_js.allowed_host]]
+url_prefix = "${OBELISK_API_URL}"
+methods = ["GET"]
+url_regex_suffix = "/v1/executions/E_[^/]+/status$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
@@ -112,9 +123,15 @@ wit = "wit"
 location = "activity/control-stub.js"
 env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL}"
-methods = ["GET", "PUT"]
-request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/stub|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
+url_prefix = "${OBELISK_API_URL}"
+methods = ["PUT"]
+url_regex_suffix = "/v1/executions/E_[^/]+/stub$"
+secrets = ["OBELISK_API_TOKEN"]
+replace_in = ["headers"]
+[[activity_js.allowed_host]]
+url_prefix = "${OBELISK_API_URL}"
+methods = ["GET"]
+url_regex_suffix = "/v1/executions/E_[^/]+/status$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
@@ -172,20 +189,19 @@ env_vars = [
   { key = "OBELISK_UI_URL", value = "${OBELISK_UI_URL}" },
   { key = "AGENT_MODELS", value = "${AGENT_MODELS:-[]}" },
   { key = "LLM_BASE_URL", value = "${LLM_BASE_URL:-http://127.0.0.1:9190}" },
-  { key = "LLM_API_PREFIX", value = "${LLM_API_PREFIX:-}" },
 ]
 # Read-only polling (statuses, responses, logs) run as direct fetches from the
 # webhook instead of one child activity per call.
 [[webhook_endpoint_js.allowed_host]]
-pattern = "${OBELISK_API_URL}"
+url_prefix = "${OBELISK_API_URL}"
 methods = ["GET"]
-request_url_regex = "^GET https?://[^/]+/v1/executions"
+url_regex_suffix = "/v1/executions"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
 [[webhook_endpoint_js.allowed_host]]
-pattern = "${LLM_BASE_URL:-http://127.0.0.1:9190}"
+url_prefix = "${LLM_BASE_URL:-http://127.0.0.1:9190}"
 methods = ["GET"]
-request_url_regex = "^GET http[s]?://[^/]+(/[^/]+)*/v1/models$"
+url_regex_suffix = "/v1/models$"
 secrets = [{ name = "LLM_API_KEY", optional = true }]
 replace_in = ["headers"]

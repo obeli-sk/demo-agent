@@ -21,34 +21,42 @@ TOOLS_JSON = { optional = true }
 pattern = "${FETCH_ALLOWED_HOST:-http://127.0.0.1:9090}"
 methods = ["GET"]
 
-# Agent's own instance: mirrors the three component grants in deployment.mock.toml one-for-one. control_cancel:
+# Agent's own instance: mirrors the component grants in deployment.mock.toml. llm_chat history reads:
 [[outbound_http.allowed_host]]
-pattern = "${OBELISK_API_URL}"
+url_prefix = "${OBELISK_API_URL}"
 methods = ["POST"]
-request_url_regex = "^POST https?://[^/]+/v1/executions/events/batch$"
+url_regex_suffix = "/v1/executions/events/batch$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
 # control_cancel:
 [[outbound_http.allowed_host]]
-pattern = "${OBELISK_API_URL}"
-methods = ["GET", "PUT"]
-request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/cancel|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
+url_prefix = "${OBELISK_API_URL}"
+methods = ["PUT"]
+url_regex_suffix = "/v1/executions/E_[^/]+/cancel$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
 # control_stub:
 [[outbound_http.allowed_host]]
-pattern = "${OBELISK_API_URL}"
-methods = ["GET", "PUT"]
-request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/stub|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
+url_prefix = "${OBELISK_API_URL}"
+methods = ["PUT"]
+url_regex_suffix = "/v1/executions/E_[^/]+/stub$"
+secrets = ["OBELISK_API_TOKEN"]
+replace_in = ["headers"]
+
+# control_cancel and control_stub status checks:
+[[outbound_http.allowed_host]]
+url_prefix = "${OBELISK_API_URL}"
+methods = ["GET"]
+url_regex_suffix = "/v1/executions/E_[^/]+/status$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
 # ui-api webhook read polling:
 [[outbound_http.allowed_host]]
-pattern = "${OBELISK_API_URL}"
+url_prefix = "${OBELISK_API_URL}"
 methods = ["GET"]
-request_url_regex = "^GET https?://[^/]+/v1/executions"
+url_regex_suffix = "/v1/executions"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]

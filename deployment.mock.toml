@@ -54,9 +54,9 @@ env_vars = [
   { key = "MOCK_FETCH_URL", value = "${MOCK_FETCH_URL:-http://127.0.0.1:9090/demo}" },
 ]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL}"
+url_prefix = "${OBELISK_API_URL}"
 methods = ["POST"]
-request_url_regex = "^POST https?://[^/]+/v1/executions/events/batch$"
+url_regex_suffix = "/v1/executions/events/batch$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
@@ -80,9 +80,15 @@ wit = "wit"
 location = "activity/control-cancel.js"
 env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL}"
-methods = ["GET", "PUT"]
-request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/cancel|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
+url_prefix = "${OBELISK_API_URL}"
+methods = ["PUT"]
+url_regex_suffix = "/v1/executions/E_[^/]+/cancel$"
+secrets = ["OBELISK_API_TOKEN"]
+replace_in = ["headers"]
+[[activity_js.allowed_host]]
+url_prefix = "${OBELISK_API_URL}"
+methods = ["GET"]
+url_regex_suffix = "/v1/executions/E_[^/]+/status$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
@@ -93,9 +99,15 @@ wit = "wit"
 location = "activity/control-stub.js"
 env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
-pattern = "${OBELISK_API_URL}"
-methods = ["GET", "PUT"]
-request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/stub|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
+url_prefix = "${OBELISK_API_URL}"
+methods = ["PUT"]
+url_regex_suffix = "/v1/executions/E_[^/]+/stub$"
+secrets = ["OBELISK_API_TOKEN"]
+replace_in = ["headers"]
+[[activity_js.allowed_host]]
+url_prefix = "${OBELISK_API_URL}"
+methods = ["GET"]
+url_regex_suffix = "/v1/executions/E_[^/]+/status$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
@@ -153,9 +165,9 @@ env_vars = [
   { key = "AGENT_MODELS", value = '${AGENT_MODELS:-[{"id":"mock","label":"mock LLM","api_type":"mock"}]}' },
 ]
 [[webhook_endpoint_js.allowed_host]]
-pattern = "${OBELISK_API_URL}"
+url_prefix = "${OBELISK_API_URL}"
 methods = ["GET"]
-request_url_regex = "^GET https?://[^/]+/v1/executions"
+url_regex_suffix = "/v1/executions"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 

@@ -12,7 +12,6 @@ OBELISK_API_TOKEN = { type = "internal" }
 AGENT_MODELS = { optional = true }
 FETCH_ALLOWED_HOST = { optional = true }
 LLM_BASE_URL = { optional = true }
-LLM_API_PREFIX = { optional = true }
 MAX_STEPS = { optional = true }
 OBELISK_API_URL = { type = "internal", source = "api-url" }
 OBELISK_UI_URL = { type = "internal", source = "webui-url" }
@@ -20,47 +19,63 @@ SYSTEM_PROMPT = { optional = true }
 TOOLS_JSON = { optional = true }
 
 # fetch_url's reach: the security boundary for the example HTTP tool. Widen this
-# (or add more allowed_host blocks) to let the agent fetch other hosts.
+# (or add more allowed_host blocks) to let the agent fetch other hosts. A host
+# pattern, so wildcards such as `*.example.com` are allowed.
 [[outbound_http.allowed_host]]
 pattern = "${FETCH_ALLOWED_HOST:-https://obeli.sk}"
 methods = ["GET"]
 
-# Agent's own instance: mirrors the three component grants in deployment.toml one-for-one. control_cancel:
+# Agent's own instance: mirrors the component grants in deployment.toml. llm_chat history reads:
 [[outbound_http.allowed_host]]
-pattern = "${OBELISK_API_URL}"
+url_prefix = "${OBELISK_API_URL}"
 methods = ["POST"]
-request_url_regex = "^POST https?://[^/]+/v1/executions/events/batch$"
+url_regex_suffix = "/v1/executions/events/batch$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
 # control_cancel:
 [[outbound_http.allowed_host]]
-pattern = "${OBELISK_API_URL}"
-methods = ["GET", "PUT"]
-request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/cancel|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
+url_prefix = "${OBELISK_API_URL}"
+methods = ["PUT"]
+url_regex_suffix = "/v1/executions/E_[^/]+/cancel$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
 # control_stub:
 [[outbound_http.allowed_host]]
-pattern = "${OBELISK_API_URL}"
-methods = ["GET", "PUT"]
-request_url_regex = "^(PUT https?://[^/]+/v1/executions/E_[^/]+/stub|GET https?://[^/]+/v1/executions/E_[^/]+/status)$"
+url_prefix = "${OBELISK_API_URL}"
+methods = ["PUT"]
+url_regex_suffix = "/v1/executions/E_[^/]+/stub$"
+secrets = ["OBELISK_API_TOKEN"]
+replace_in = ["headers"]
+
+# control_cancel and control_stub status checks:
+[[outbound_http.allowed_host]]
+url_prefix = "${OBELISK_API_URL}"
+methods = ["GET"]
+url_regex_suffix = "/v1/executions/E_[^/]+/status$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
 # ui-api webhook read polling:
 [[outbound_http.allowed_host]]
-pattern = "${OBELISK_API_URL}"
+url_prefix = "${OBELISK_API_URL}"
 methods = ["GET"]
-request_url_regex = "^GET https?://[^/]+/v1/executions"
+url_regex_suffix = "/v1/executions"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
-# LLM server.
+# LLM server: model discovery, then the chat APIs under an optional per-model path.
 [[outbound_http.allowed_host]]
-pattern = "${LLM_BASE_URL:-http://127.0.0.1:9190}"
-methods = ["GET", "POST"]
-request_url_regex = "^GET http[s]?://[^/]+(/[^/]+)*/v1/models$|^POST http[s]?://[^/]+(/[^/]+)*/v1/(messages|chat/completions|responses)$"
+url_prefix = "${LLM_BASE_URL:-http://127.0.0.1:9190}"
+methods = ["GET"]
+url_regex_suffix = "/v1/models$"
+secrets = ["LLM_API_KEY"]
+replace_in = ["headers"]
+
+[[outbound_http.allowed_host]]
+url_prefix = "${LLM_BASE_URL:-http://127.0.0.1:9190}"
+methods = ["POST"]
+url_regex_suffix = "(/[^/]+)*/v1/(messages|chat/completions|responses)$"
 secrets = ["LLM_API_KEY"]
 replace_in = ["headers"]

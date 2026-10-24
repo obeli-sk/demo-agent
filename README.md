@@ -76,6 +76,9 @@ the fastest way to see the architecture end to end, and it documents the
 
 ## LLM endpoint
 
+Local runs require an explicit `LLM_BASE_URL`. Cloud deployment supplies it from
+the account's `llm` integration declared in `app.toml`, overriding local values.
+
 One endpoint serves the whole catalog: the fallback JSON catalog `AGENT_MODELS`
 (optional), the base URL `LLM_BASE_URL` (including any gateway path before
 `/v1`), and an optional bearer `LLM_API_KEY`. Each
@@ -151,7 +154,7 @@ addresses are internal public-env sources declared in `app.toml`:
 | Var | Default | Meaning |
 |-----|---------|---------|
 | `AGENT_MODELS` | `[]` | Fallback LLM catalog JSON |
-| `LLM_BASE_URL` | `http://127.0.0.1:9190` | LLM base URL before `/v1/...`, e.g. `https://openrouter.ai/api` |
+| `LLM_BASE_URL` | required locally; supplied by cloud | LLM base URL before `/v1/...`, e.g. `https://openrouter.ai/api` |
 | `LLM_API_KEY` | (unset) | LLM bearer, keyless if unset |
 | `MAX_STEPS` | `10` | model invocations per turn |
 | `TOOLS_JSON` | `[fetch_url]` | model-facing tool registry |

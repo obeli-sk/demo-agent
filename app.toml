@@ -1,5 +1,8 @@
 app_name = "demo-agent"
 
+[cloud.integrations]
+llm = { type = "llm", env = "LLM_BASE_URL" }
+
 [secrets]
 # LLM endpoint bearer (unset for a keyless local backend).
 LLM_API_KEY = { optional = true }
@@ -11,7 +14,7 @@ OBELISK_API_TOKEN = { type = "internal" }
 [public_env]
 AGENT_MODELS = { optional = true }
 FETCH_ALLOWED_HOST = { optional = true }
-LLM_BASE_URL = { optional = true }
+LLM_BASE_URL = {}
 MAX_STEPS = { optional = true }
 OBELISK_API_URL = { type = "internal", source = "api-url" }
 OBELISK_UI_URL = { type = "internal", source = "webui-url" }
@@ -67,14 +70,14 @@ replace_in = ["headers"]
 
 # LLM server: model discovery, then the chat APIs under an optional per-model path.
 [[outbound_http.allowed_host]]
-url_prefix = "${LLM_BASE_URL:-http://127.0.0.1:9190}"
+url_prefix = "${LLM_BASE_URL}"
 methods = ["GET"]
 url_regex_suffix = "/v1/models$"
 secrets = ["LLM_API_KEY"]
 replace_in = ["headers"]
 
 [[outbound_http.allowed_host]]
-url_prefix = "${LLM_BASE_URL:-http://127.0.0.1:9190}"
+url_prefix = "${LLM_BASE_URL}"
 methods = ["POST"]
 url_regex_suffix = "(/[^/]+)*/v1/(messages|chat/completions|responses)$"
 secrets = ["LLM_API_KEY"]

@@ -107,13 +107,15 @@ const SHELL_HTML = `<!doctype html>
     <div class="working-indicator" id="working" hidden><span class="dot"></span><span id="working-text">working</span></div>
     <textarea id="input" placeholder="Send a message... (Shift+Enter for newline)" rows="2"></textarea>
     <div class="composer-row">
-      <select id="model"></select>
-      <select id="effort">
-        <option value="">effort: default</option>
-        <option value="low">low</option>
-        <option value="medium">medium</option>
-        <option value="high">high</option>
-      </select>
+      <span id="pickers">
+        <select id="model"></select>
+        <select id="effort">
+          <option value="">effort: default</option>
+          <option value="low">low</option>
+          <option value="medium">medium</option>
+          <option value="high">high</option>
+        </select>
+      </span>
       <span class="spacer"></span>
       <button id="stop" hidden>Stop</button>
       <button id="send">Send</button>
@@ -214,6 +216,7 @@ async function selectRun(id) {
   state.currentId = id;
   state.detail = null;
   state.lastDetailHtml = null;
+  el("pickers").hidden = true;
   syncUrl();
   renderRuns();
   await refreshDetail();
@@ -236,9 +239,13 @@ function renderDetail() {
   el("head-chip").textContent = d.label || d.status || "";
   el("head-id").innerHTML =
     '<a href="' + esc(execLink(d.id)) + '" target="_blank" rel="noopener" title="open in Obelisk web UI">' + esc(d.id) + "</a>" +
-    (d.backend ? "  ·  " + esc(d.backend) : "");
+    (d.backend ? "  ·  " + esc(d.backend) : "") +
+    (d.effort ? "  ·  effort: " + esc(d.effort) : "");
   var terminal = d.status === "finished";
   el("cancel-btn").hidden = terminal;
+  // Model and effort are fixed at session start; only "New conversation" offers them.
+  el("pickers").hidden = true;
+  renderComposerLock();
 
   var t = d.transcript || {};
   toolCardSeq = 0;
@@ -361,9 +368,21 @@ function wireAskForm(ask) {
 }
 
 // ----- composer actions -----
+function sessionClosed() {
+  var d = state.detail;
+  return Boolean(state.currentId && d && d.id === state.currentId && d.status === "finished");
+}
+function renderComposerLock() {
+  var closed = sessionClosed();
+  el("input").disabled = closed;
+  el("send").disabled = closed;
+  el("input").placeholder = closed
+    ? "This conversation has finished. Click New conversation to start another."
+    : "Send a message... (Shift+Enter for newline)";
+}
 async function send() {
   var text = (el("input").value || "").trim();
-  if (!text) return;
+  if (!text || sessionClosed()) return;
   var backend = el("model").value || null;
   var effort = el("effort").value || null;
   var btn = el("send");
@@ -371,7 +390,8 @@ async function send() {
   try {
     var d = state.detail;
     var offer = d && d.transcript && d.transcript.input_offer;
-    if (d && offer && offer.id && d.id === state.currentId && d.status !== "finished") {
+    if (state.currentId) {
+      if (!(d && d.id === state.currentId && offer && offer.id)) throw new Error("the session is not accepting input yet");
       await api("POST", "/api/input/" + encodeURIComponent(state.currentId),
         { offer_id: offer.id, input: { prompt: { id: genId("u"), text: text } } });
     } else {
@@ -386,7 +406,7 @@ async function send() {
     await refreshDetail();
     scheduleDetailPoll();
   } catch (e) { alert("send failed: " + e.message); }
-  finally { btn.disabled = false; }
+  finally { renderComposerLock(); }
 }
 async function stop() {
   var d = state.detail;
@@ -405,7 +425,8 @@ function newConversation() {
   state.currentId = null; state.detail = null; state.lastDetailHtml = null;
   syncUrl();
   el("detail-head").hidden = true; el("detail-body").hidden = true; el("empty").hidden = false;
-  el("working").hidden = true; el("stop").hidden = true;
+  el("working").hidden = true; el("stop").hidden = true; el("pickers").hidden = false;
+  renderComposerLock();
   renderRuns(); el("input").focus();
 }
 

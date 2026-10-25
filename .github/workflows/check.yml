@@ -94,6 +94,7 @@ jobs:
       - name: obelisk server verify
         env:
           AGENT_MODELS: "[]"
+          LLM_BASE_URL: "http://127.0.0.1:9190"
         run: nix develop --command just verify
 
   e2e:

@@ -39,7 +39,7 @@ export async function loadResponses(execId) {
         including = false;
         if (typeof payload.max_cursor === "number" && cursor >= payload.max_cursor) break;
     }
-    return { ...state, timeline: timeline.finish(), markers };
+    return { ...state, timeline: timeline.finish(), markers, responseCursor: cursor };
 }
 
 // Bounded latest-window scan for the live working flag plus the terminal markers

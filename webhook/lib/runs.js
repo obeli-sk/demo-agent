@@ -72,6 +72,7 @@ export async function detailRun(id) {
         system_prompt: started?.system_prompt || null,
         transcript: {
             timeline: walk.timeline,
+            response_cursor: walk.responseCursor,
             human_input_events: walk.humanInputEvents,
             session_started: started,
             input_offer: walk.inputOffer,

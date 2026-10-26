@@ -60,7 +60,7 @@ url_regex_suffix = "/v1/executions/E_[^/]+/status$"
 secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]
 
-# ui-api webhook read polling:
+# ui-api webhook reads:
 [[outbound_http.allowed_host]]
 url_prefix = "${OBELISK_API_URL}"
 methods = ["GET"]
@@ -81,4 +81,11 @@ url_prefix = "${LLM_BASE_URL}"
 methods = ["POST"]
 url_regex_suffix = "(/[^/]+)*/v1/(messages|chat/completions|responses)$"
 secrets = ["LLM_API_KEY"]
+replace_in = ["headers"]
+
+[[outbound_http.allowed_host]]
+url_prefix = "${OBELISK_API_URL}"
+methods = ["POST"]
+url_regex_suffix = "/v1/executions/status/batch$"
+secrets = ["OBELISK_API_TOKEN"]
 replace_in = ["headers"]

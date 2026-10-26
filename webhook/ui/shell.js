@@ -1,6 +1,4 @@
-// The single-page-app shell: one static HTML document (inline CSS + browser JS)
-// that boots the polling UI. The browser script is embedded as a template
-// literal, so it deliberately avoids backticks and ${...} in its own code.
+// Static HTML shell with an inline browser script.
 
 export function htmlShell() {
     const uiUrl = (process.env["OBELISK_UI_URL"] || "http://localhost:8080").replace(/\/$/, "");
@@ -125,6 +123,16 @@ const SHELL_HTML = `<!doctype html>
 <script>
 "use strict";
 var state = { runs: [], currentId: null, detail: null, timer: null, lastDetailHtml: null };
+var runsTimer = null;
+var runsRequest = null;
+var detailRequest = null;
+var detailDirty = false;
+var watchSource = null;
+var watchKey = null;
+var watchLive = false;
+var sidebarChangeTimer = null;
+var lastRunsAt = 0;
+var watchedStatuses = new Map();
 // Reset at the top of each renderDetail so tool cards get a stable, unique,
 // position-based id (transcript order never changes as it grows). Keying open
 // state on the tool call id instead would collide when a provider — or the mock
@@ -168,10 +176,18 @@ async function loadModels() {
 
 // ----- run list -----
 async function refreshRuns() {
+  if (runsRequest) return runsRequest;
+  lastRunsAt = Date.now();
+  runsRequest = loadRuns();
+  try { await runsRequest; }
+  finally { runsRequest = null; scheduleRunsPoll(); }
+}
+async function loadRuns() {
   try {
     var data = await api("GET", "/api/runs");
     state.runs = data.runs || [];
     renderRuns();
+    ensureWatch();
   } catch (e) { /* transient */ }
 }
 function renderRuns() {
@@ -216,6 +232,8 @@ async function selectRun(id) {
   state.currentId = id;
   state.detail = null;
   state.lastDetailHtml = null;
+  detailDirty = false;
+  ensureWatch();
   el("pickers").hidden = true;
   syncUrl();
   renderRuns();
@@ -224,9 +242,31 @@ async function selectRun(id) {
 }
 async function refreshDetail() {
   if (!state.currentId) return;
+  if (detailRequest && detailRequest.id === state.currentId) {
+    detailDirty = true;
+    return detailRequest.promise;
+  }
+  var id = state.currentId;
+  var request = { id: id, promise: null };
+  detailRequest = request;
+  request.promise = loadDetail(request);
+  try { await request.promise; }
+  finally {
+    if (detailRequest === request) {
+      detailRequest = null;
+      if (detailDirty) { detailDirty = false; refreshDetail(); }
+      else scheduleDetailPoll();
+    }
+  }
+}
+async function loadDetail(request) {
   try {
-    state.detail = await api("GET", "/api/runs/" + encodeURIComponent(state.currentId));
-    renderDetail();
+    var detail = await api("GET", "/api/runs/" + encodeURIComponent(request.id));
+    if (state.currentId === request.id && detailRequest === request) {
+      state.detail = detail;
+      renderDetail();
+      ensureWatch();
+    }
   } catch (e) { /* transient */ }
 }
 function renderDetail() {
@@ -423,6 +463,9 @@ async function cancel() {
 }
 function newConversation() {
   state.currentId = null; state.detail = null; state.lastDetailHtml = null;
+  detailDirty = false;
+  ensureWatch();
+  scheduleDetailPoll();
   syncUrl();
   el("detail-head").hidden = true; el("detail-body").hidden = true; el("empty").hidden = false;
   el("working").hidden = true; el("stop").hidden = true; el("pickers").hidden = false;
@@ -430,14 +473,79 @@ function newConversation() {
   renderRuns(); el("input").focus();
 }
 
-// ----- polling -----
+// ----- change streams and fallback polling -----
+function closeWatch() {
+  if (watchSource) watchSource.close();
+  watchSource = null;
+  watchLive = false;
+}
+function ensureWatch() {
+  if (typeof EventSource === "undefined") return;
+  var run = state.currentId && state.detail?.status !== "finished" ? state.currentId : "";
+  var ids = state.runs.filter(function (r) { return r.status !== "finished" && r.id !== run; })
+    .map(function (r) { return r.id; }).slice(0, 199);
+  var key = document.hidden || (!run && !ids.length) ? "" : run + "|" + ids.join(",");
+  if (key === watchKey) return;
+  closeWatch();
+  watchKey = key;
+  if (!key) return;
+  var query = new URLSearchParams();
+  if (run) {
+    query.set("run", run);
+    if (state.detail?.id === run) query.set("cursor", String(state.detail.transcript?.response_cursor || 0));
+  }
+  if (ids.length) query.set("ids", ids.join(","));
+  var source = new EventSource("/api/watch?" + query.toString());
+  watchSource = source;
+  source.addEventListener("open", function () {
+    if (watchSource !== source) return;
+    watchLive = true;
+    scheduleRunsPoll(); scheduleDetailPoll();
+  });
+  source.addEventListener("error", function () {
+    if (watchSource !== source) return;
+    watchLive = false;
+    scheduleRunsPoll(); scheduleDetailPoll();
+  });
+  source.addEventListener("statuses", function (event) {
+    if (watchSource !== source) return;
+    var changed = false;
+    for (var item of JSON.parse(event.data)) {
+      if (item.id === state.currentId) refreshDetail();
+      var signature = item.status + ":" + item.max_version;
+      var previous = watchedStatuses.get(item.id);
+      var listed = state.runs.find(function (r) { return r.id === item.id; });
+      if (previous !== undefined ? previous !== signature : listed && listed.status !== item.status) changed = true;
+      watchedStatuses.set(item.id, signature);
+    }
+    if (changed && !sidebarChangeTimer) {
+      sidebarChangeTimer = setTimeout(function () {
+        sidebarChangeTimer = null;
+        if (!document.hidden) refreshRuns();
+      }, Math.max(0, lastRunsAt + 10000 - Date.now()));
+    }
+  });
+  source.addEventListener("run", function () {
+    if (watchSource === source) refreshDetail();
+  });
+  source.addEventListener("end", function () {
+    source.close();
+    if (watchSource !== source) return;
+    watchSource = null; watchLive = false;
+    scheduleRunsPoll(); scheduleDetailPoll();
+  });
+}
+function scheduleRunsPoll() {
+  clearTimeout(runsTimer);
+  if (!document.hidden) runsTimer = setTimeout(refreshRuns, watchLive ? 60000 : 10000);
+}
 function scheduleDetailPoll() {
   if (state.timer) clearTimeout(state.timer);
   var d = state.detail;
+  if (document.hidden || !state.currentId || d?.status === "finished") return;
   var busy = d && (d.status === "running" || (d.transcript && d.transcript.agent_working));
-  var delay = busy ? 1500 : 5000;
+  var delay = watchLive && watchKey?.startsWith(state.currentId + "|") ? 15000 : busy ? 1500 : 5000;
   state.timer = setTimeout(async function () {
-    await refreshRuns();
     if (state.currentId) await refreshDetail();
     scheduleDetailPoll();
   }, delay);
@@ -456,6 +564,15 @@ window.addEventListener("popstate", function () {
   var id = runIdFromUrl();
   if (id && id !== state.currentId) selectRun(id);
   else if (!id && state.currentId) newConversation();
+});
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden) {
+    clearTimeout(runsTimer); clearTimeout(state.timer); clearTimeout(sidebarChangeTimer);
+    sidebarChangeTimer = null;
+    closeWatch(); watchKey = null;
+  } else {
+    refreshRuns(); refreshDetail();
+  }
 });
 
 (async function boot() {

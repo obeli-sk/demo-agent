@@ -6,6 +6,7 @@
 //   GET  /api/runs                run list (sidebar)
 //   GET  /api/runs/:id            one run, its notification stream folded into a timeline
 //   GET  /api/logs/:id            logs from the run and its derived executions
+//   GET  /api/watch               SSE change signals for the selected and listed runs
 //   POST /api/submit              body: {prompt, backend?, effort?} -> {execution_id}
 //   POST /api/sessions            create an empty session
 //   POST /api/input/:runId        body: {offer_id, input} -> injected event
@@ -13,9 +14,7 @@
 //   POST /api/cancel/:runId       cancel the run
 //   POST /api/answer/:childId     body: {answer} -> fulfil an ask_user gate
 //
-// The SPA polls the run list and the open run, switching to a short poll while
-// the agent is working. This entry is the HTTP router only; server logic lives
-// in ./lib/*, the served page in ./ui/shell.js.
+// The SPA follows /api/watch change signals and keeps polling as a fallback.
 
 import { jsonError, jsonResponse, parseQuery } from "./lib/http.js";
 import * as obelisk from "obelisk:webhook@1.0.0";
@@ -31,6 +30,7 @@ import {
     submit,
     configureRuntime,
 } from "./lib/mutations.js";
+import { watchResponse } from "./lib/watch.js";
 import { htmlShell } from "./ui/shell.js";
 
 configureRuntime(obelisk, dynamic);
@@ -54,6 +54,13 @@ export default async function handle(request) {
             const id = decodeURIComponent(path.substring("/api/logs/".length));
             if (!id) return jsonError(400, "missing run id");
             return jsonResponse(await loadExecutionTreeLogs(id, query.cursor || ""));
+        }
+        if (method === "GET" && path === "/api/watch") {
+            return await watchResponse({
+                run: query.run || "",
+                cursor: Number(query.cursor) || 0,
+                ids: (query.ids || "").split(",").filter(Boolean),
+            });
         }
         if (method === "POST" && path === "/api/submit") return await submit(request);
         if (method === "POST" && path === "/api/sessions") return await createSession(request);

@@ -18,7 +18,11 @@ live between turns on a user-input offer. Two tools ship as examples:
 It is a stripped-down sibling of `apps/workflow-agent` (which adds a whole bash
 VFS, MCP, GitHub mounts, peer sessions, and deployment editing). Everything here
 is the essential skeleton: the durable loop, the stub/notification protocol, the
-multi-provider LLM client, and a polling web UI.
+multi-provider LLM client, and a web UI driven by session-event streams.
+
+Each visible tab follows one `/api/watch` SSE stream for run statuses and the
+selected session's new events. The UI reloads its views on changes, with slower
+polling as a safety net and regular polling when streaming is unavailable.
 
 ## Architecture
 
@@ -27,7 +31,7 @@ webhook (webhook/ui-api.js) ── HTTP ──> browser SPA (webhook/ui/shell.js
       │  schedule / cancel / inject input / answer
       ▼
 workflow  (workflow/session.js)  ── the agent loop, one durable execution/session
-      │        │                    self-stubs session-events ──> UI polls them
+      │        │                    self-stubs session-events ──> UI follows them
       │        └── ask_user ──> stub (ask-user)  ── human-in-the-loop
       ├── llm.completion   (activity/llm-chat.js)     ── the model
       └── tool dispatch    (workflow/tools.js: activity/fetch-url.js, ...) ── your HTTP tools

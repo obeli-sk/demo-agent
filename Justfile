@@ -25,6 +25,7 @@ test:
   node --test activity/fetch-url.test.js
   node --test activity/llm-chat-mock.test.js
   node --test webhook/ui/shell.test.js
+  node --test webhook/lib/watch.test.js
   node --test activity/llm-history.test.js
 
 # End-to-end: run deployment.mock.toml on a throwaway server and drive one turn

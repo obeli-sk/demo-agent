@@ -33,8 +33,13 @@ export MOCK_FETCH_URL="$WEBHOOK/demo"
 obelisk server run -d deployment.mock.toml --server-config "$TMP/server.toml" \
     --app-config app.mock.toml > "$TMP/server.log" 2>&1 &
 SERVER_PID=$!
+WATCH_PID=""
 
 cleanup() {
+    if [[ -n "$WATCH_PID" ]]; then
+        kill "$WATCH_PID" 2>/dev/null || true
+        wait "$WATCH_PID" 2>/dev/null || true
+    fi
     kill "$SERVER_PID" 2>/dev/null || true
     wait "$SERVER_PID" 2>/dev/null || true
     rm -rf "$TMP"
@@ -81,3 +86,27 @@ FINAL="$(jq -r '.transcript.timeline | map(select(.turn_complete)) | last | .res
 [[ "$FINAL" == *"returned HTTP 200"* ]] || fail "unexpected final answer: $FINAL"
 
 echo "PASS: $FINAL"
+
+WATCH_CURSOR="$(jq -er '.transcript.response_cursor' <<< "$RUN")"
+curl --silent --show-error --no-buffer --max-time "$TIMEOUT_SECS" \
+    "$WEBHOOK/api/watch?run=$EXECUTION_ID&cursor=$WATCH_CURSOR" > "$TMP/watch.log" &
+WATCH_PID=$!
+deadline=$((SECONDS + TIMEOUT_SECS))
+until grep -q 'event: statuses' "$TMP/watch.log"; do
+    kill -0 "$WATCH_PID" 2>/dev/null || fail "watch closed before initial statuses"
+    ((SECONDS < deadline)) || fail "watch sent no initial statuses"
+    sleep 0.1
+done
+if grep -q 'event: run' "$TMP/watch.log"; then fail "watch replayed already-seen session events"; fi
+
+jq -nc --arg offer "$(jq -er '.transcript.input_offer.id' <<< "$RUN")" \
+    '{offer_id:$offer,input:{prompt:{id:"watch-turn",text:"e2e: another tool call"}}}' | \
+    curl -sf -X POST "$WEBHOOK/api/input/$EXECUTION_ID" --data-binary @- > /dev/null \
+    || fail "second turn submission failed"
+deadline=$((SECONDS + TIMEOUT_SECS))
+until grep -q 'event: run' "$TMP/watch.log"; do
+    kill -0 "$WATCH_PID" 2>/dev/null || fail "watch closed before new session events"
+    ((SECONDS < deadline)) || fail "watch sent no new session-event signal"
+    sleep 0.1
+done
+echo "PASS: watch streams statuses and new session events from the requested cursor"

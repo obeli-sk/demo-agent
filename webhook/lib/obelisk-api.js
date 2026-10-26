@@ -1,11 +1,4 @@
-// Obelisk access for the webhook: read-only REST fetches plus the two native
-// mutation host calls.
-//
-// The UI polls statuses, responses and logs every few seconds; routing every
-// read through a child activity (one execution per call) would flood the server
-// with short executions. A webhook can speak to the Obelisk REST API directly,
-// so these GETs run as plain fetches. Mutations (cancel/stub) stay durable
-// native `control` calls.
+// Read and follow via REST without child executions; cancel/stub use durable host calls.
 
 import * as control from "demo-agent:tools/control";
 import { activityJson } from "./http.js";
@@ -87,4 +80,39 @@ export function cancelObeliskExecution(id) {
 
 export function stubObeliskExecution(id, result) {
     return control.stubExecution(id, JSON.stringify(result));
+}
+
+// Follow streams resolve on headers; the caller reads `body` incrementally.
+async function apiStream(label, path, init = {}) {
+    let resp;
+    try {
+        resp = await fetch(`${API_BASE}${path}`, {
+            ...init,
+            headers: {
+                accept: "text/event-stream",
+                authorization: `Bearer ${OBELISK_API_TOKEN}`,
+                ...(init.headers || {}),
+            },
+        });
+    } catch (e) {
+        throw new Error(`${label}: ${String(e)}`);
+    }
+    if (!resp.ok) throw new Error(`${label}: HTTP ${resp.status}: ${await resp.text()}`);
+    return resp;
+}
+
+export function followStatuses(ids) {
+    return apiStream("follow-statuses", "/v1/executions/status/batch?follow=true", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ execution_ids: ids }),
+    });
+}
+
+export function followResponses(id, joinSet, cursor) {
+    const current = Number.isFinite(cursor) && cursor > 0 ? Math.trunc(cursor) : 0;
+    return apiStream(
+        `follow-responses ${id}`,
+        `/v1/executions/${encodeURIComponent(id)}/responses?follow=true&join_set=${encodeURIComponent(joinSet)}&cursor=${current}`,
+    );
 }

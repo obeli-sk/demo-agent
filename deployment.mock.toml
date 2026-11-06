@@ -144,6 +144,7 @@ exec.lock_expiry.minutes = 2
 [[webhook_endpoint_js]]
 name = "ui-api"
 location = "webhook/ui-api.js"
+http_server = "internal"
 routes = [
   { methods = ["GET"], route = "/" },
   { methods = ["GET"], route = "/api/models" },
@@ -184,4 +185,5 @@ replace_in = ["headers"]
 [[webhook_endpoint_js]]
 name = "demo_page"
 location = "webhook/demo-page.js"
+http_server = "external"
 routes = [{ methods = ["GET"], route = "/demo" }]

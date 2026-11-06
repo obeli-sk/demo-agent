@@ -14,6 +14,7 @@ cd "$(dirname "$0")/.."
 API_PORT="${E2E_API_PORT:-15005}"
 WEBUI_PORT="${E2E_WEBUI_PORT:-18080}"
 WEBHOOK_PORT="${E2E_WEBHOOK_PORT:-19090}"
+DEMO_PORT="$((WEBHOOK_PORT + 1))"
 TIMEOUT_SECS="${E2E_TIMEOUT_SECS:-60}"
 WEBHOOK="http://127.0.0.1:${WEBHOOK_PORT}"
 
@@ -21,16 +22,17 @@ TMP="$(mktemp -d)"
 cat > "$TMP/server.toml" <<EOF
 api.listening_addr = "127.0.0.1:${API_PORT}"
 webui.listening_addr = "127.0.0.1:${WEBUI_PORT}"
-external.listening_addr = "127.0.0.1:${WEBHOOK_PORT}"
+http_server.internal.listening_addr = "127.0.0.1:${WEBHOOK_PORT}"
+http_server.external.listening_addr = "127.0.0.1:${DEMO_PORT}"
 
 [database.sqlite]
 directory = "$TMP/sqlite"
 EOF
 
-export FETCH_ALLOWED_HOST="$WEBHOOK"
-export MOCK_FETCH_URL="$WEBHOOK/demo"
+export FETCH_ALLOWED_HOST="http://127.0.0.1:${DEMO_PORT}"
+export MOCK_FETCH_URL="$FETCH_ALLOWED_HOST/demo"
 
-obelisk server run -d deployment.mock.toml --server-config "$TMP/server.toml" \
+obelisk server run --dev -d deployment.mock.toml --server-config "$TMP/server.toml" \
     --app-config app.mock.toml > "$TMP/server.log" 2>&1 &
 SERVER_PID=$!
 WATCH_PID=""
@@ -59,6 +61,9 @@ until curl -sf "$WEBHOOK/api/models" > /dev/null; do
     ((SECONDS < deadline)) || fail "server not ready within ${TIMEOUT_SECS}s"
     sleep 1
 done
+
+PUBLIC_STATUS="$(curl -s -o /dev/null -w '%{http_code}' "$FETCH_ALLOWED_HOST/api/models")"
+[[ "$PUBLIC_STATUS" == 404 ]] || fail "agent UI leaked onto the public listener: $PUBLIC_STATUS"
 
 EXECUTION_ID="$(curl -sf -X POST "$WEBHOOK/api/submit" \
     -d '{"prompt":"e2e: demonstrate a tool call","backend":"mock"}' | jq -er .execution_id)" \

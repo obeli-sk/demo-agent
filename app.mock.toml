@@ -1,6 +1,7 @@
 # App policy for deployment.mock.toml: app.toml without the LLM secret, catalog and grant.
 
 app_name = "demo-agent"
+public_http_servers = ["external"]
 
 [secrets]
 OBELISK_API_TOKEN = { type = "internal" }

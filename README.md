@@ -50,14 +50,20 @@ JS components need no build. Configure the LLM endpoint, then serve:
 
 ```sh
 export LLM_BASE_URL=http://127.0.0.1:9190         # discover models from the local backend
-just serve                                        # obelisk server run -d deployment.toml
+just serve                                        # obelisk server run --dev -d deployment.toml
 ```
 
 `nix develop` (or direnv via `.envrc-example`) provides the pinned Obelisk and
-Node. Then open <http://localhost:9090> (the webhook listener), start a
+Node. Then open <http://localhost:9091> (the webhook listener), start a
 conversation, and watch the model call `fetch_url`; trigger `ask_user` and answer
 it inline; use Stop to interrupt a turn or Cancel to end the run. A session that gets
 no prompt or `ask_user` answer for 7 days ends itself with an idle-timeout error.
+
+The agent UI uses the `internal` listener. `just serve` and `just serve-mock`
+use `--dev` for local access without credentials; keep this listener on localhost.
+On ObeliskNet, open `https://internal--<app>.<domain>` behind platform sign-in.
+The live app leaves the public `external` listener closed. The mock app exposes
+only its dummy `/demo` page there.
 
 ### Try it with no LLM (`just serve-mock`)
 
@@ -74,7 +80,7 @@ It swaps only the LLM client for a scripted stand-in
 ([`webhook/demo-page.js`](webhook/demo-page.js)), then, once the real durable
 tool result comes back, a final answer citing the fetched HTTP status. No LLM
 endpoint, key, or catalog is needed. Submit any
-prompt at <http://localhost:9090> and watch the tool call and final answer appear. This is
+prompt at <http://localhost:9091> and watch the tool call and final answer appear. This is
 the fastest way to see the architecture end to end, and it documents the
 `llm/chat.completion` contract by example.
 

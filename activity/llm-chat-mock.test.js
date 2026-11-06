@@ -2,9 +2,25 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import completion from "./llm-chat-mock.js";
 
+process.env.MOCK_FETCH_URL = "https://public.demo.test/demo";
+
 const TOOLS = JSON.stringify([{ name: "ask_user" }, { name: "fetch_url" }]);
 
 function blocks(res) { return JSON.parse(res.reply.content_json); }
+
+test("the mock URL follows the resolved external listener without a duplicate slash", async () => {
+    const previous = process.env.MOCK_FETCH_URL;
+    delete process.env.MOCK_FETCH_URL;
+    process.env.EXTERNAL_BASE_URL = "https://public.demo.test:9443/prefix/";
+    try {
+        const messages = JSON.stringify([{ role: "user", content: [{ type: "text", text: "fetch it" }] }]);
+        const res = await completion("", messages, TOOLS, "mock", "", []);
+        assert.equal(blocks(res).find((block) => block.type === "tool_use").input.url, "https://public.demo.test:9443/prefix/demo");
+    } finally {
+        process.env.MOCK_FETCH_URL = previous;
+        delete process.env.EXTERNAL_BASE_URL;
+    }
+});
 
 test("step 1: a fresh prompt yields a fetch_url tool call", async () => {
     const messages = JSON.stringify([{ role: "user", content: [{ type: "text", text: "fetch it" }] }]);
@@ -12,13 +28,13 @@ test("step 1: a fresh prompt yields a fetch_url tool call", async () => {
     assert.equal(res.reply.stop_reason, "tool_use");
     const call = blocks(res).find((b) => b.type === "tool_use");
     assert.equal(call.name, "fetch_url");
-    assert.equal(call.input.url, "http://127.0.0.1:9090/demo");
+    assert.equal(call.input.url, "https://public.demo.test/demo");
 });
 
 test("step 2: a tool result yields a final answer citing the status", async () => {
     const messages = JSON.stringify([
         { role: "user", content: [{ type: "text", text: "fetch it" }] },
-        { role: "assistant", content: [{ type: "tool_use", id: "mock_call_1", name: "fetch_url", input: { url: "http://127.0.0.1:9090/demo" } }] },
+        { role: "assistant", content: [{ type: "tool_use", id: "mock_call_1", name: "fetch_url", input: { url: "https://public.demo.test/demo" } }] },
         { role: "user", content: [{ type: "tool_result", tool_use_id: "mock_call_1", content: JSON.stringify({ status: 200 }), is_error: false }] },
     ]);
     const res = await completion("", messages, TOOLS, "mock", "", []);

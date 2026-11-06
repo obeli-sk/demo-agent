@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import vm from "node:vm";
 import { htmlShell } from "./shell.js";
 
+process.env.OBELISK_UI_URL = "https://webui.demo.test";
+
 async function browserHarness() {
     const html = await htmlShell().text();
     const script = html.split("<script>")[1].split("</script>")[0];

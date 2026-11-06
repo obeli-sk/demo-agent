@@ -64,6 +64,8 @@ use `--dev` for local access without credentials; keep this listener on localhos
 On ObeliskNet, open `https://internal--<app>.<domain>` behind platform sign-in.
 The live app leaves the public `external` listener closed. The mock app exposes
 only its dummy `/demo` page there.
+Its `EXTERNAL_BASE_URL` comes from the server's `http-server-url` source, so
+the mock URL and fetch permission follow the configured listener and public URL.
 
 ### Try it with no LLM (`just serve-mock`)
 

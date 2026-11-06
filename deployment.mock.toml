@@ -51,7 +51,8 @@ location = "activity/llm-chat-mock.js"
 exec.lock_expiry.seconds = 30
 env_vars = [
   { key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" },
-  { key = "MOCK_FETCH_URL", value = "${MOCK_FETCH_URL:-http://127.0.0.1:9090/demo}" },
+  { key = "MOCK_FETCH_URL", value = "${MOCK_FETCH_URL:-}" },
+  "EXTERNAL_BASE_URL",
 ]
 [[activity_js.allowed_host]]
 url_prefix = "${OBELISK_API_URL}"
@@ -69,7 +70,7 @@ return_type = "result<string, string>"
 location = "activity/fetch-url.js"
 exec.lock_expiry.seconds = 30
 [[activity_js.allowed_host]]
-pattern = "${FETCH_ALLOWED_HOST:-http://127.0.0.1:9090}"
+pattern = "${FETCH_ALLOWED_HOST:-${EXTERNAL_BASE_URL}}"
 methods = ["GET"]
 
 # --- Control plane ------------------------------------------------------------

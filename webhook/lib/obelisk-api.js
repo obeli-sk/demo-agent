@@ -3,7 +3,7 @@
 import * as control from "demo-agent:tools/control";
 import { activityJson } from "./http.js";
 
-const API_BASE = (process.env["OBELISK_API_URL"] || "http://127.0.0.1:5005").replace(/\/$/, "");
+const API_BASE = process.env["OBELISK_API_URL"].replace(/\/$/, "");
 const OBELISK_API_TOKEN = process.env["OBELISK_API_TOKEN"];
 if (!OBELISK_API_TOKEN) throw new Error("OBELISK_API_TOKEN is required");
 

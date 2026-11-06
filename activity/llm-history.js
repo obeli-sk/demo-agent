@@ -43,7 +43,7 @@ function parseMessages(json, label) {
 }
 
 export function obeliskApi() {
-    const base = process.env["OBELISK_API_URL"] || "http://127.0.0.1:5005";
+    const base = process.env["OBELISK_API_URL"];
     const token = process.env["OBELISK_API_TOKEN"];
     if (!token) throw "OBELISK_API_TOKEN is required for LLM history";
     return async (path, body) => {

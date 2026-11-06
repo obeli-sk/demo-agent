@@ -24,13 +24,14 @@ api.listening_addr = "127.0.0.1:${API_PORT}"
 webui.listening_addr = "127.0.0.1:${WEBUI_PORT}"
 http_server.internal.listening_addr = "127.0.0.1:${WEBHOOK_PORT}"
 http_server.external.listening_addr = "127.0.0.1:${DEMO_PORT}"
+http_server.external.public_url = "http://127.0.0.1:${DEMO_PORT}/"
 
 [database.sqlite]
 directory = "$TMP/sqlite"
 EOF
 
-export FETCH_ALLOWED_HOST="http://127.0.0.1:${DEMO_PORT}"
-export MOCK_FETCH_URL="$FETCH_ALLOWED_HOST/demo"
+unset FETCH_ALLOWED_HOST MOCK_FETCH_URL
+DEMO_BASE="http://127.0.0.1:${DEMO_PORT}"
 
 obelisk server run --dev -d deployment.mock.toml --server-config "$TMP/server.toml" \
     --app-config app.mock.toml > "$TMP/server.log" 2>&1 &
@@ -62,7 +63,7 @@ until curl -sf "$WEBHOOK/api/models" > /dev/null; do
     sleep 1
 done
 
-PUBLIC_STATUS="$(curl -s -o /dev/null -w '%{http_code}' "$FETCH_ALLOWED_HOST/api/models")"
+PUBLIC_STATUS="$(curl -s -o /dev/null -w '%{http_code}' "$DEMO_BASE/api/models")"
 [[ "$PUBLIC_STATUS" == 404 ]] || fail "agent UI leaked onto the public listener: $PUBLIC_STATUS"
 
 EXECUTION_ID="$(curl -sf -X POST "$WEBHOOK/api/submit" \

@@ -14,12 +14,13 @@ MOCK_FETCH_URL = { optional = true }
 MAX_STEPS = { optional = true }
 OBELISK_API_URL = { type = "internal", source = "api-url" }
 OBELISK_UI_URL = { type = "internal", source = "webui-url" }
+EXTERNAL_BASE_URL = { type = "internal", source = "http-server-url", http_server = "external" }
 SYSTEM_PROMPT = { optional = true }
 TOOLS_JSON = { optional = true }
 
 # fetch_url's reach (the tool call in the demo is real, against the dummy /demo webhook).
 [[outbound_http.allowed_host]]
-pattern = "${FETCH_ALLOWED_HOST:-http://127.0.0.1:9090}"
+pattern = "${FETCH_ALLOWED_HOST:-${EXTERNAL_BASE_URL}}"
 methods = ["GET"]
 
 # Agent's own instance: mirrors the component grants in deployment.mock.toml. llm_chat history reads:

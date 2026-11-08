@@ -1,7 +1,7 @@
 // Static HTML shell with an inline browser script.
 
 export function htmlShell() {
-    const uiUrl = (process.env["OBELISK_UI_URL"] || "http://localhost:8080").replace(/\/$/, "");
+    const uiUrl = process.env["OBELISK_UI_URL"].replace(/\/$/, "");
     return new Response(SHELL_HTML.replace("__OBELISK_UI_URL__", uiUrl), {
         status: 200,
         headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store, max-age=0" },

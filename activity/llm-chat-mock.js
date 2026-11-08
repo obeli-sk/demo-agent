@@ -17,13 +17,13 @@
 // deployment.mock.toml back to deployment.toml (the real llm-chat.js) for a live
 // model.
 
-const DEMO_URL = process.env["MOCK_FETCH_URL"] || "http://127.0.0.1:9090/demo";
 import { loadMessages, obeliskApi } from "./llm-history.js";
 
 export default async function completion(system, deltaJson, toolsJson, model, effort, historyIds) {
     void system;
     void model;
     void effort;
+    const demoUrl = process.env["MOCK_FETCH_URL"] || `${process.env["EXTERNAL_BASE_URL"].replace(/\/$/, "")}/demo`;
     const messages = await loadMessages(historyIds, deltaJson, historyIds.length ? obeliskApi() : null);
     const tools = parseJson(toolsJson, "tools-json", []);
     const hasFetchUrl = tools.some((t) => t && t.name === "fetch_url");
@@ -35,7 +35,7 @@ export default async function completion(system, deltaJson, toolsJson, model, ef
     if (result) {
         const status = statusFrom(result);
         const text = status !== null
-            ? `Done. Fetching ${DEMO_URL} returned HTTP ${status}. (This reply came from the mock LLM in deployment.mock.toml.)`
+            ? `Done. Fetching ${demoUrl} returned HTTP ${status}. (This reply came from the mock LLM in deployment.mock.toml.)`
             : `Done. The fetch_url tool returned: ${clip(result.content, 200)} (mock LLM.)`;
         return reply([{ type: "text", text }], "end_turn");
     }
@@ -51,8 +51,8 @@ export default async function completion(system, deltaJson, toolsJson, model, ef
     const id = `mock_call_${countToolUses(messages) + 1}`;
     return reply(
         [
-            { type: "text", text: `I'll fetch ${DEMO_URL} to demonstrate a tool call.` },
-            { type: "tool_use", id, name: "fetch_url", input: { url: DEMO_URL } },
+            { type: "text", text: `I'll fetch ${demoUrl} to demonstrate a tool call.` },
+            { type: "tool_use", id, name: "fetch_url", input: { url: demoUrl } },
         ],
         "tool_use",
     );

@@ -13,8 +13,8 @@ serve-mock:
 
 # Compile, link and policy-check both deployments
 verify:
-  OBELISK__HTTP_SERVER__INTERNAL__API_AUTH=true obelisk server verify --skip-db --server-config server.toml --app-config app.toml -d deployment.toml
-  OBELISK__HTTP_SERVER__INTERNAL__API_AUTH=true obelisk server verify --skip-db --server-config server.toml --app-config app.mock.toml -d deployment.mock.toml
+  obelisk server verify --dev --skip-db --server-config server.toml --app-config app.toml -d deployment.toml
+  obelisk server verify --dev --skip-db --server-config server.toml --app-config app.mock.toml -d deployment.mock.toml
 
 # Unit tests: pure logic, runnable offline (no Obelisk, no network).
 test:

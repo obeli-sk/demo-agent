@@ -113,6 +113,12 @@ const SHELL_HTML = `<!doctype html>
           <option value="medium">medium</option>
           <option value="high">high</option>
         </select>
+        <select id="api" title="LLM API the endpoint speaks">
+          <option value="">api: default</option>
+          <option value="openai-chat-completions">chat completions</option>
+          <option value="openai-responses">responses</option>
+          <option value="anthropic-messages">anthropic messages</option>
+        </select>
       </span>
       <span class="spacer"></span>
       <button id="stop" hidden>Stop</button>
@@ -280,10 +286,11 @@ function renderDetail() {
   el("head-id").innerHTML =
     '<a href="' + esc(execLink(d.id)) + '" target="_blank" rel="noopener" title="open in Obelisk web UI">' + esc(d.id) + "</a>" +
     (d.backend ? "  ·  " + esc(d.backend) : "") +
-    (d.effort ? "  ·  effort: " + esc(d.effort) : "");
+    (d.effort ? "  ·  effort: " + esc(d.effort) : "") +
+    (d.api ? "  ·  api: " + esc(d.api) : "");
   var terminal = d.status === "finished";
   el("cancel-btn").hidden = terminal;
-  // Model and effort are fixed at session start; only "New conversation" offers them.
+  // Model, effort and api are fixed at session start; only "New conversation" offers them.
   el("pickers").hidden = true;
   renderComposerLock();
 
@@ -425,6 +432,7 @@ async function send() {
   if (!text || sessionClosed()) return;
   var backend = el("model").value || null;
   var effort = el("effort").value || null;
+  var llmApi = el("api").value || null;
   var btn = el("send");
   btn.disabled = true;
   try {
@@ -435,7 +443,7 @@ async function send() {
       await api("POST", "/api/input/" + encodeURIComponent(state.currentId),
         { offer_id: offer.id, input: { prompt: { id: genId("u"), text: text } } });
     } else {
-      var res = await api("POST", "/api/submit", { prompt: text, backend: backend, effort: effort });
+      var res = await api("POST", "/api/submit", { prompt: text, backend: backend, effort: effort, api: llmApi });
       state.currentId = res.execution_id;
       state.detail = null;
       state.lastDetailHtml = null;

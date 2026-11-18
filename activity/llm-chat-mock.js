@@ -19,10 +19,11 @@
 
 import { loadMessages, obeliskApi } from "./llm-history.js";
 
-export default async function completion(system, deltaJson, toolsJson, model, effort, historyIds) {
+export default async function completion(system, deltaJson, toolsJson, model, effort, historyIds, api) {
     void system;
     void model;
     void effort;
+    void api;
     const demoUrl = process.env["MOCK_FETCH_URL"] || `${process.env["EXTERNAL_BASE_URL"].replace(/\/$/, "")}/demo`;
     const messages = await loadMessages(historyIds, deltaJson, historyIds.length ? obeliskApi() : null);
     const tools = parseJson(toolsJson, "tools-json", []);

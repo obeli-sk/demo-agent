@@ -15,9 +15,15 @@ export function configureRuntime(obelisk, dynamic) {
     dynamicRuntime = dynamic;
 }
 
-function scheduleSession(prompt, backend, effort) {
+// Empty optional strings mean "default" and travel as none.
+function optional(value) {
+    return typeof value === "string" && value ? value : null;
+}
+
+function scheduleSession(prompt, payload) {
     const execId = runtime.executionIdGenerate();
-    dynamicRuntime.schedule(execId, WORKFLOW_FFQN, [prompt, backend, effort], null);
+    const params = [prompt, optional(payload.backend), optional(payload.effort), optional(payload.api)];
+    dynamicRuntime.schedule(execId, WORKFLOW_FFQN, params, null);
     return execId;
 }
 
@@ -30,10 +36,8 @@ export async function submit(request) {
     catch (e) { return jsonError(400, `body must be JSON: ${e.message}`); }
     const prompt = payload?.prompt;
     if (typeof prompt !== "string" || !prompt.trim()) return jsonError(400, "prompt is required");
-    const backend = (typeof payload?.backend === "string" && payload.backend) ? payload.backend : null;
-    const effort = (typeof payload?.effort === "string" && payload.effort) ? payload.effort : null;
     let execId;
-    try { execId = scheduleSession(prompt, backend, effort); }
+    try { execId = scheduleSession(prompt, payload); }
     catch (e) { return jsonError(502, `schedule failed: ${String(e)}`); }
     return jsonResponse({ execution_id: execId });
 }
@@ -46,10 +50,8 @@ export async function createSession(request) {
     } catch (e) {
         return jsonError(400, `body must be JSON: ${e.message}`);
     }
-    const backend = typeof payload.backend === "string" && payload.backend ? payload.backend : null;
-    const effort = typeof payload.effort === "string" && payload.effort ? payload.effort : null;
     let execId;
-    try { execId = scheduleSession("", backend, effort); }
+    try { execId = scheduleSession("", payload ?? {}); }
     catch (e) { return jsonError(502, `schedule failed: ${String(e)}`); }
     return jsonResponse({ execution_id: execId });
 }

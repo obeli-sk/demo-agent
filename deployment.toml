@@ -163,6 +163,7 @@ params = [
   { name = "prompt", type = "string" },
   { name = "model",  type = "option<string>" },
   { name = "effort", type = "option<string>" },
+  { name = "api",    type = "option<string>" },
 ]
 return_type = "result<_, string>"
 exec.lock_expiry.minutes = 2

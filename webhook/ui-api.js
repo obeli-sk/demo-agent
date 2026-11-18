@@ -7,7 +7,7 @@
 //   GET  /api/runs/:id            one run, its notification stream folded into a timeline
 //   GET  /api/logs/:id            logs from the run and its derived executions
 //   GET  /api/watch               SSE change signals for the selected and listed runs
-//   POST /api/submit              body: {prompt, backend?, effort?} -> {execution_id}
+//   POST /api/submit              body: {prompt, backend?, effort?, api?} -> {execution_id}
 //   POST /api/sessions            create an empty session
 //   POST /api/input/:runId        body: {offer_id, input} -> injected event
 //   POST /api/interrupt/:runId    body: {offer_id} -> stop the current turn

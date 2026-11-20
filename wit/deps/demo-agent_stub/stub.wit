@@ -36,6 +36,7 @@ interface stub {
     prompt: string,
     backend: string,
     effort: string,
+    api: string,
     system-prompt: string,
   }
 

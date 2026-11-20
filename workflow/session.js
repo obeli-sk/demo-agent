@@ -1,5 +1,5 @@
 // demo-agent:workflow/workflow.run-cancellable:
-//   func(prompt: string, model: option<string>, effort: option<string>)
+//   func(prompt: string, model: option<string>, effort: option<string>, api: option<string>)
 //     -> result<_, string>
 // The `-cancellable` suffix is what makes Obelisk allow an operator (the UI's
 // Cancel button) to cancel a running session; do not drop it.
@@ -60,21 +60,22 @@ class SessionIdle extends Error {
     constructor() { super("session idle timeout: no interaction for 7 days"); }
 }
 
-export default function runCancellable(prompt, model, effort) {
+export default function runCancellable(prompt, model, effort, api) {
     try {
-        return runInner(prompt ?? "", model ?? "", effort ?? "");
+        return runInner(prompt ?? "", { model: model ?? "", effort: effort ?? "", api: api ?? "" });
     } catch (e) {
         throw errorMessage(e);
     }
 }
 
-function runInner(prompt, model, effort) {
+// `llm` is the session's {model, effort, api} choice; empty strings mean defaults.
+function runInner(prompt, llm) {
     const executionId = obelisk.executionIdCurrent();
-    const config = discover(executionId, model, effort);
+    const config = discover(executionId, llm.model, llm.effort);
     if (typeof config?.system_prompt !== "string" || !config.system_prompt) {
         throw "config.discover did not return a system prompt";
     }
-    agentLoop(prompt, model, effort, config);
+    agentLoop(prompt, llm, config);
 }
 
 function errorMessage(e) {
@@ -231,14 +232,14 @@ function applySessionInput(event, turnIndex, notifications, pendingMessages) {
 
 // One LLM call raced against the user input offer; each injected event lands
 // after the request snapshot, so it reaches the model on the following turn.
-function callLlmWithUser(session, system, pendingMessages, toolsJson, model, effort, historyIds, notifications) {
+function callLlmWithUser(session, system, pendingMessages, toolsJson, llm, historyIds, notifications) {
     let promptQueued = false;
     while (true) {
         notifications.flush();
         const requestMessageCount = pendingMessages.length;
         const deltaJson = JSON.stringify(pendingMessages);
         const startedAt = hostNowMs();
-        const completionId = completionSubmit(session.joinSet, system, deltaJson, toolsJson, model, effort, historyIds);
+        const completionId = completionSubmit(session.joinSet, system, deltaJson, toolsJson, llm.model, llm.effort, historyIds, llm.api);
 
         let completion;
         while (true) {
@@ -331,7 +332,7 @@ function dispatchTool(call, toolsByName, notifications) {
 
 // ----- main loop -----
 
-function agentLoop(prompt, model, effort, config) {
+function agentLoop(prompt, llm, config) {
     const maxSteps = config.max_steps;
     const tools = config.tools ?? [];
     const toolsByName = linkTools(tools, TOOL_IMPLS);
@@ -342,7 +343,7 @@ function agentLoop(prompt, model, effort, config) {
     const pendingMessages = prompt.trim() ? [userText(prompt.trim())] : [];
 
     notifications.notify({
-        session_started: { protocol_version: PROTOCOL_VERSION, prompt, backend: model, effort, system_prompt: system },
+        session_started: { protocol_version: PROTOCOL_VERSION, prompt, backend: llm.model, effort: llm.effort, api: llm.api, system_prompt: system },
     });
 
     let turnIndex = 0;
@@ -384,7 +385,7 @@ function agentLoop(prompt, model, effort, config) {
                 turnComplete = !shouldCallLlm;
             } else {
                 publishAgentStatus(notifications, true, turnIndex);
-                const outcome = callLlmWithUser(session, system, pendingMessages, toolsJson, model, effort, historyIds, notifications);
+                const outcome = callLlmWithUser(session, system, pendingMessages, toolsJson, llm, historyIds, notifications);
                 if (outcome.kind === "failed") {
                     notifications.notify({ agent_error: llmErrorEvent(turnIndex, outcome.message) });
                     shouldCallLlm = false;

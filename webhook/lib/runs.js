@@ -69,6 +69,7 @@ export async function detailRun(id) {
         created_at: status?.created_at || "",
         backend: started?.backend || null,
         effort: started?.effort || null,
+        api: started?.api || null,
         system_prompt: started?.system_prompt || null,
         transcript: {
             timeline: walk.timeline,

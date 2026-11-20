@@ -101,8 +101,10 @@ catalog entry is `{ id, label, api_type, path?, wire_model, max_tokens? }`, wher
 The model picker and LLM activity first try `GET <LLM_BASE_URL>/v1/models`,
 using `LLM_API_KEY` when configured. A nonempty response supplies the models;
 matching configured entries keep their aliases, adapters, provider paths, and
-token limits. New models use OpenAI chat completions, and advertised defaults
-appear first. Existing sessions can still resolve configured aliases omitted
+token limits. Advertised defaults appear first. The model list does not say
+which API a model speaks, so nothing is guessed: the UI's api picker chooses
+one per session, and without a choice the catalog `api_type` applies, else
+OpenAI chat completions. Existing sessions can still resolve configured aliases omitted
 from discovery. If discovery is unavailable, empty, or malformed, both consumers
 fall back to `AGENT_MODELS`. No catalog is required when discovery succeeds.
 The mock deployment keeps its configured mock model and makes no discovery call.

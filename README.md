@@ -7,7 +7,49 @@
 A durable Obelisk workflow that *is* an agent loop, written entirely in
 JavaScript (no build step). It records a provider-neutral chat history in LLM
 execution events, calls an LLM, dispatches the tools the model asks for, and stays
-live between turns on a user-input offer. Two tools ship as examples:
+live between turns on a user-input offer.
+
+## Deploying to Obelisk Cloud
+
+### 1. Clone and log in
+
+Use `nix develop` to get the pinned Obelisk CLI.
+
+```sh
+git clone https://github.com/obeli-sk/demo-agent.git
+cd demo-agent
+nix develop
+obelisk cloud auth login
+obelisk generate app-name
+```
+
+`obelisk generate app-name` writes a unique name to `app.toml`. Run it once for
+each new app.
+
+### 2. Push the app
+
+```sh
+obelisk cloud app push
+```
+
+This uploads `app.toml`, `deployment.toml`, and the JavaScript sources, then
+activates the deployment. The app uses your account's LLM integration, which
+supplies `LLM_BASE_URL`. Run the same push command after editing the app to
+update it.
+
+### 3. Open the agent
+
+```sh
+obelisk cloud app status
+```
+
+Open the **Internal webhooks** URL from the output and sign in. Choose a model,
+then ask the agent to fetch `https://obeli.sk/` and summarize the page. The
+`fetch_url` tool call and its result appear in the conversation.
+
+## Architecture
+
+Two tools ship as examples:
 
 - **`fetch_url`** — a GET-only HTTP tool (an activity). The template's example of
   the generic tool contract: one activity, a JSON object in, a JSON object out.
@@ -23,8 +65,6 @@ multi-provider LLM client, and a web UI driven by session-event streams.
 Each visible tab follows one `/api/watch` SSE stream for run statuses and the
 selected session's new events. The UI reloads its views on changes, with slower
 polling as a safety net and regular polling when streaming is unavailable.
-
-## Architecture
 
 ```
 webhook (src/webhook/ui-api.js) ── HTTP ──> browser SPA (src/webhook/ui/shell.js)
@@ -44,7 +84,7 @@ protocol — the `session-event` stream the workflow publishes and the
 [`src/wit/deps/demo-agent_stub/stub.wit`](src/wit/deps/demo-agent_stub/stub.wit),
 the source of truth for both sides.
 
-## Run
+## Running locally
 
 JS components need no build. Configure the LLM endpoint, then serve:
 
@@ -65,7 +105,6 @@ Both use Obelisk's default server settings. On Linux, SQLite data lives in
 `${XDG_DATA_HOME:-$HOME/.local/share}/obelisk/apps/demo-agent/sqlite/`, and logs
 go to the console. Existing runs from the previous configuration are still
 stored in the checkout's `sqlite/` directory.
-On ObeliskNet, open `https://internal--<app>.<domain>` behind platform sign-in.
 The live app leaves the public `external` listener closed. The mock app exposes
 only its dummy `/demo` page there.
 Its `EXTERNAL_BASE_URL` comes from the server's `http-server-url` source, so

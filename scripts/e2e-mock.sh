@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# End-to-end smoke test: runs deployment.mock.toml on a throwaway server and
+# End-to-end smoke test: runs the mock deployment on a throwaway server and
 # drives one turn through the webhook API, asserting the mock LLM's fetch_url
 # tool call ran for real and its result reached the final answer.
 #
@@ -33,8 +33,7 @@ EOF
 unset FETCH_ALLOWED_HOST MOCK_FETCH_URL
 DEMO_BASE="http://127.0.0.1:${DEMO_PORT}"
 
-obelisk server run --dev -d deployment.mock.toml --server-config "$TMP/server.toml" \
-    --app-config app.mock.toml > "$TMP/server.log" 2>&1 &
+bash test/run-mock.sh server run --dev --server-config "$TMP/server.toml" > "$TMP/server.log" 2>&1 &
 SERVER_PID=$!
 WATCH_PID=""
 

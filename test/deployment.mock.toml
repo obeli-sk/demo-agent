@@ -1,7 +1,7 @@
 # demo-agent, MOCK LLM variant.
 #
 # Identical to deployment.toml EXCEPT the `llm_chat` component points at
-# activity/llm-chat-mock.js (a scripted, network-free stand-in) instead of the
+# src/activity/llm-chat-mock.js (a scripted, network-free stand-in) instead of the
 # real multi-provider client, the webhook's AGENT_MODELS defaults to a mock
 # entry, and a dummy `demo_page` webhook serves `/demo` as the fetch_url target
 # (so no outbound network is needed). Run it with `just serve-mock` to see the
@@ -13,8 +13,8 @@
 [[activity_js]]
 name = "config_discover"
 ffqn = "demo-agent:config/config.discover"
-wit = "wit"
-location = "activity/config-discover.js"
+wit = "src/wit"
+location = "src/activity/config-discover.js"
 exec.lock_expiry.seconds = 30
 env_vars = [
   { key = "MAX_STEPS", value = "${MAX_STEPS:-10}" },
@@ -41,13 +41,13 @@ ${TOOLS_JSON:-[
 # --- LLM endpoint: MOCK -------------------------------------------------------
 # The scripted stand-in. Pure (no network, no secret, no catalog): it reads the
 # conversation state and replies in the same provider-neutral shape as the real
-# client. See activity/llm-chat-mock.js. Apart from `demo_page`, this is the
+# client. See src/activity/llm-chat-mock.js. Apart from `demo_page`, this is the
 # only block that differs from deployment.toml.
 [[activity_js]]
 name = "llm_chat"
 ffqn = "demo-agent:llm/chat.completion"
-wit = "wit"
-location = "activity/llm-chat-mock.js"
+wit = "src/wit"
+location = "src/activity/llm-chat-mock.js"
 exec.lock_expiry.seconds = 30
 env_vars = [
   { key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" },
@@ -67,7 +67,7 @@ name = "tool_fetch_url"
 ffqn = "demo-agent:tools/http.fetch-url"
 params = [{ name = "args-json", type = "string" }]
 return_type = "result<string, string>"
-location = "activity/fetch-url.js"
+location = "src/activity/fetch-url.js"
 exec.lock_expiry.seconds = 30
 [[activity_js.allowed_host]]
 pattern = "${FETCH_ALLOWED_HOST:-${EXTERNAL_BASE_URL}}"
@@ -77,8 +77,8 @@ methods = ["GET"]
 [[activity_js]]
 name = "control_cancel"
 ffqn = "demo-agent:tools/control.cancel-execution"
-wit = "wit"
-location = "activity/control-cancel.js"
+wit = "src/wit"
+location = "src/activity/control-cancel.js"
 env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
 url_prefix = "${OBELISK_API_URL}"
@@ -96,8 +96,8 @@ replace_in = ["headers"]
 [[activity_js]]
 name = "control_stub"
 ffqn = "demo-agent:tools/control.stub-execution"
-wit = "wit"
-location = "activity/control-stub.js"
+wit = "src/wit"
+location = "src/activity/control-stub.js"
 env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
 url_prefix = "${OBELISK_API_URL}"
@@ -116,23 +116,23 @@ replace_in = ["headers"]
 [[activity_stub]]
 name = "stub_injection"
 ffqn = "demo-agent:stub/stub.injection"
-wit = "wit"
+wit = "src/wit"
 
 [[activity_stub]]
 name = "stub_record_output"
 ffqn = "demo-agent:stub/stub.record-output"
-wit = "wit"
+wit = "src/wit"
 
 [[activity_stub]]
 name = "stub_ask_user"
 ffqn = "demo-agent:stub/stub.ask-user"
-wit = "wit"
+wit = "src/wit"
 
 # --- The agent loop -----------------------------------------------------------
 [[workflow_js]]
 name = "session"
 ffqn = "demo-agent:workflow/workflow.run-cancellable"
-location = "workflow/session.js"
+location = "src/workflow/session.js"
 params = [
   { name = "prompt", type = "string" },
   { name = "model",  type = "option<string>" },
@@ -145,7 +145,7 @@ exec.lock_expiry.minutes = 2
 # --- Web UI -------------------------------------------------------------------
 [[webhook_endpoint_js]]
 name = "ui-api"
-location = "webhook/ui-api.js"
+location = "src/webhook/ui-api.js"
 http_server = "internal"
 routes = [
   { methods = ["GET"], route = "/" },
@@ -186,6 +186,6 @@ replace_in = ["headers"]
 # What the mock LLM's fetch_url call GETs, so the demo needs no outbound network.
 [[webhook_endpoint_js]]
 name = "demo_page"
-location = "webhook/demo-page.js"
+location = "src/webhook/demo-page.js"
 http_server = "external"
 routes = [{ methods = ["GET"], route = "/demo" }]

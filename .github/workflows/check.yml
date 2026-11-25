@@ -95,6 +95,7 @@ jobs:
         env:
           AGENT_MODELS: "[]"
           LLM_BASE_URL: "http://127.0.0.1:9190"
+          LLM_API_KEY: "ci-placeholder"
         run: nix develop --command just verify
 
   e2e:

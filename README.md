@@ -27,21 +27,21 @@ polling as a safety net and regular polling when streaming is unavailable.
 ## Architecture
 
 ```
-webhook (webhook/ui-api.js) ── HTTP ──> browser SPA (webhook/ui/shell.js)
+webhook (src/webhook/ui-api.js) ── HTTP ──> browser SPA (src/webhook/ui/shell.js)
       │  schedule / cancel / inject input / answer
       ▼
-workflow  (workflow/session.js)  ── the agent loop, one durable execution/session
+workflow  (src/workflow/session.js)  ── the agent loop, one durable execution/session
       │        │                    self-stubs session-events ──> UI follows them
       │        └── ask_user ──> stub (ask-user)  ── human-in-the-loop
-      ├── llm.completion   (activity/llm-chat.js)     ── the model
-      └── tool dispatch    (workflow/tools.js: activity/fetch-url.js, ...) ── your HTTP tools
-config.discover (activity/config-discover.js)          ── tools + prompt + budget
+      ├── llm.completion   (src/activity/llm-chat.js)     ── the model
+      └── tool dispatch    (src/workflow/tools.js, src/activity/fetch-url.js, ...) ── your HTTP tools
+config.discover (src/activity/config-discover.js)          ── tools + prompt + budget
 ```
 
-The contract between all of these is the WIT in `wit/`. The notification
+The contract between all of these is the WIT in `src/wit/`. The notification
 protocol — the `session-event` stream the workflow publishes and the
 `session-input` the UI injects — is defined in
-[`wit/deps/demo-agent_stub/stub.wit`](wit/deps/demo-agent_stub/stub.wit),
+[`src/wit/deps/demo-agent_stub/stub.wit`](src/wit/deps/demo-agent_stub/stub.wit),
 the source of truth for both sides.
 
 ## Run
@@ -49,8 +49,9 @@ the source of truth for both sides.
 JS components need no build. Configure the LLM endpoint, then serve:
 
 ```sh
-export LLM_BASE_URL=http://127.0.0.1:9190         # discover models from the local backend
-just serve                                        # obelisk server run --dev -d deployment.toml
+export LLM_BASE_URL=http://127.0.0.1:9190  # discover models from the local backend
+export LLM_API_KEY=local-dev               # placeholder for a backend that ignores bearer tokens
+just serve
 ```
 
 `nix develop` (or direnv via `.envrc-example`) provides the pinned Obelisk and
@@ -77,13 +78,13 @@ To see the whole loop drive a turn without any LLM setup, run the mock
 deployment:
 
 ```sh
-just serve-mock            # deployment.mock.toml + app.mock.toml
+just serve-mock            # uses the mock TOMLs in test/
 ```
 
 It swaps only the LLM client for a scripted stand-in
-([`activity/llm-chat-mock.js`](activity/llm-chat-mock.js)) that replies with a
+([`src/activity/llm-chat-mock.js`](src/activity/llm-chat-mock.js)) that replies with a
 `fetch_url` tool call to a dummy `/demo` webhook on the same server
-([`webhook/demo-page.js`](webhook/demo-page.js)), then, once the real durable
+([`src/webhook/demo-page.js`](src/webhook/demo-page.js)), then, once the real durable
 tool result comes back, a final answer citing the fetched HTTP status. No LLM
 endpoint, key, or catalog is needed. Submit any
 prompt at <http://localhost:9091> and watch the tool call and final answer appear. This is
@@ -92,18 +93,18 @@ the fastest way to see the architecture end to end, and it documents the
 
 ## LLM endpoint
 
-Local runs require an explicit `LLM_BASE_URL`. Cloud deployment supplies it from
+Local runs require `LLM_BASE_URL` and `LLM_API_KEY`. Cloud deployment supplies the URL from
 the account's `llm` integration declared in `app.toml`, overriding local values.
 
 One endpoint serves the whole catalog: the fallback JSON catalog `AGENT_MODELS`
 (optional), the base URL `LLM_BASE_URL` (including any gateway path before
-`/v1`), and an optional bearer `LLM_API_KEY`. Each
+`/v1`), and the bearer token `LLM_API_KEY`. Each
 catalog entry is `{ id, label, api_type, path?, wire_model, max_tokens? }`, where
 `api_type` is `anthropic-messages`, `openai-chat-completions`, or
 `openai-responses`.
 
 The model picker and LLM activity first try `GET <LLM_BASE_URL>/v1/models`,
-using `LLM_API_KEY` when configured. A nonempty response supplies the models;
+using `LLM_API_KEY`. A nonempty response supplies the models;
 matching configured entries keep their aliases, adapters, provider paths, and
 token limits. Advertised defaults appear first. The model list does not say
 which API a model speaks, so nothing is guessed: the UI's api picker chooses
@@ -133,12 +134,12 @@ Three edits:
 1. **Write the activity.** Use the `fetch_url` contract: a default export
    `run(args-json: string) -> result<string, string>` that parses the model's
    tool input from `args-json` and returns its result as JSON text. Copy
-   [`activity/fetch-url.js`](activity/fetch-url.js) as a starting point.
+   [`src/activity/fetch-url.js`](src/activity/fetch-url.js) as a starting point.
 2. **Deploy it.** Add an `[[activity_js]]` block in
    [`deployment.toml`](deployment.toml) (its own FFQN, `params`/`return_type`,
    and any `allowed_host` grants).
 3. **Link and register it.** Import the activity in
-   [`workflow/tools.js`](workflow/tools.js) and add its FFQN to the `TOOL_IMPLS`
+   [`src/workflow/tools.js`](src/workflow/tools.js) and add its FFQN to the `TOOL_IMPLS`
    map, then append an entry to the `TOOLS_JSON` default in `deployment.toml`
    (or set the `TOOLS_JSON` env var):
 
@@ -148,7 +149,7 @@ Three edits:
    ```
 
 The workflow reads `TOOLS_JSON` at session start, resolves each entry's FFQN to
-the activity imported in `workflow/tools.js`, offers the tool to the model
+the activity imported in `src/workflow/tools.js`, offers the tool to the model
 alongside `ask_user`, and dispatches a `tool_use` by calling that activity with
 the input serialized as its single argument. The `schema` is the JSON Schema the
 model sees for the tool's input.
@@ -173,7 +174,7 @@ addresses are internal public-env sources declared in `app.toml`:
 |-----|---------|---------|
 | `AGENT_MODELS` | `[]` | Fallback LLM catalog JSON |
 | `LLM_BASE_URL` | required locally; supplied by cloud | LLM base URL before `/v1/...`, e.g. `https://openrouter.ai/api` |
-| `LLM_API_KEY` | (unset) | LLM bearer, keyless if unset |
+| `LLM_API_KEY` | required for the live app | LLM bearer token |
 | `MAX_STEPS` | `10` | model invocations per turn |
 | `TOOLS_JSON` | `[fetch_url]` | model-facing tool registry |
 | `SYSTEM_PROMPT` | built-in | base system prompt |
@@ -184,13 +185,14 @@ addresses are internal public-env sources declared in `app.toml`:
 ## Tests
 
 `just test` runs the offline unit suites (`node --test`): the pure loop helpers
-(`workflow/session-logic.test.js`), the UI state projection
-(`shared/session-state.test.js`), and the `fetch_url` tool
-(`activity/fetch-url.test.js`). `just verify` compiles and links both
+(`src/workflow/session-logic.test.js`), the UI state projection
+(`src/shared/session-state.test.js`), and the `fetch_url` tool
+(`src/activity/fetch-url.test.js`). `just verify` compiles and links both
 deployments against the WIT and checks them against their app policies
-(`app.toml`, `app.mock.toml`) without a running server. `AGENT_MODELS` is optional.
+(`app.toml`, `test/app.mock.toml`) without a running server. Set `LLM_BASE_URL` and
+`LLM_API_KEY` for live verification. `AGENT_MODELS` is optional.
 `just e2e` ([`scripts/e2e-mock.sh`](scripts/e2e-mock.sh)) starts
-`deployment.mock.toml` on a throwaway server (non-default ports and a temporary
+`test/deployment.mock.toml` on a throwaway server (non-default ports and a temporary
 database, so a dev server can keep running) and drives one turn through the
 webhook API, asserting the `fetch_url` tool call succeeded and its result reached
 the final answer. No outbound network is needed.

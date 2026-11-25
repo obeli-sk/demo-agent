@@ -56,7 +56,7 @@ export function linkTools(tools, impls) {
     }
     if (unlinked.length > 0) {
         throw `TOOLS_JSON names tools this workflow is not linked against: ${unlinked.join(", ")}. `
-            + `Import them in workflow/tools.js. Linked: ${[...impls.keys()].join(", ") || "(none)"}`;
+            + `Import them in src/workflow/tools.js. Linked: ${[...impls.keys()].join(", ") || "(none)"}`;
     }
     return linked;
 }

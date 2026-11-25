@@ -4,19 +4,19 @@
 # tool (fetch_url), the config/discovery activity, two control-plane activities
 # the UI calls (cancel/stub), the stub interface the loop self-stubs onto, and
 # the web UI webhook. Adding a tool takes a new [[activity_js]] block here, a
-# TOOLS_JSON entry below, and an import in workflow/tools.js.
+# TOOLS_JSON entry below, and an import in src/workflow/tools.js.
 
 # --- Session config -----------------------------------------------------------
-# Read once at session start (activity/config-discover.js). MAX_STEPS caps model
+# Read once at session start (src/activity/config-discover.js). MAX_STEPS caps model
 # invocations per turn. TOOLS_JSON is the model-facing tool registry: each entry
-# names an activity FFQN (which workflow/tools.js must import) and a JSON Schema
+# names an activity FFQN (which src/workflow/tools.js must import) and a JSON Schema
 # for its input. SYSTEM_PROMPT overrides the built-in base prompt. Override any
 # of them from the environment to retune the linked tools, prompt and budget.
 [[activity_js]]
 name = "config_discover"
 ffqn = "demo-agent:config/config.discover"
-wit = "wit"
-location = "activity/config-discover.js"
+wit = "src/wit"
+location = "src/activity/config-discover.js"
 exec.lock_expiry.seconds = 30
 env_vars = [
   { key = "MAX_STEPS", value = "${MAX_STEPS:-10}" },
@@ -45,12 +45,12 @@ ${TOOLS_JSON:-[
 # AGENT_MODELS is an optional fallback; each entry routes to a wire API (anthropic-messages,
 # openai-chat-completions, openai-responses) under the shared LLM_BASE_URL
 # (including any gateway prefix, e.g. "https://openrouter.ai/api"; also the
-# allowed_host url_prefix), authenticated by the single LLM_API_KEY secret (unset for keyless).
+# allowed_host url_prefix), authenticated by the required LLM_API_KEY secret.
 [[activity_js]]
 name = "llm_chat"
 ffqn = "demo-agent:llm/chat.completion"
-wit = "wit"
-location = "activity/llm-chat.js"
+wit = "src/wit"
+location = "src/activity/llm-chat.js"
 exec.lock_expiry.minutes = 10
 max_retries = 3
 env_vars = [
@@ -68,13 +68,13 @@ replace_in = ["headers"]
 url_prefix = "${LLM_BASE_URL}"
 methods = ["GET"]
 url_regex_suffix = "/v1/models$"
-secrets = [{ name = "LLM_API_KEY", optional = true }]
+secrets = ["LLM_API_KEY"]
 replace_in = ["headers"]
 [[activity_js.allowed_host]]
 url_prefix = "${LLM_BASE_URL}"
 methods = ["POST"]
 url_regex_suffix = "(/[^/]+)*/v1/(messages|chat/completions|responses)$"
-secrets = [{ name = "LLM_API_KEY", optional = true }]
+secrets = ["LLM_API_KEY"]
 replace_in = ["headers"]
 
 # --- Example tool: fetch_url --------------------------------------------------
@@ -82,13 +82,13 @@ replace_in = ["headers"]
 # run(args-json) -> result<string, string>. The allowed_host grant is the
 # security boundary: widen FETCH_ALLOWED_HOST (or add more [[allowed_host]]
 # blocks) to let the agent reach other hosts. Copy this block, point it at a new
-# activity, import it in workflow/tools.js, and register it in TOOLS_JSON.
+# activity, import it in src/workflow/tools.js, and register it in TOOLS_JSON.
 [[activity_js]]
 name = "tool_fetch_url"
 ffqn = "demo-agent:tools/http.fetch-url"
 params = [{ name = "args-json", type = "string" }]
 return_type = "result<string, string>"
-location = "activity/fetch-url.js"
+location = "src/activity/fetch-url.js"
 exec.lock_expiry.seconds = 30
 [[activity_js.allowed_host]]
 pattern = "${FETCH_ALLOWED_HOST:-https://obeli.sk}"
@@ -100,8 +100,8 @@ methods = ["GET"]
 [[activity_js]]
 name = "control_cancel"
 ffqn = "demo-agent:tools/control.cancel-execution"
-wit = "wit"
-location = "activity/control-cancel.js"
+wit = "src/wit"
+location = "src/activity/control-cancel.js"
 env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
 url_prefix = "${OBELISK_API_URL}"
@@ -119,8 +119,8 @@ replace_in = ["headers"]
 [[activity_js]]
 name = "control_stub"
 ffqn = "demo-agent:tools/control.stub-execution"
-wit = "wit"
-location = "activity/control-stub.js"
+wit = "src/wit"
+location = "src/activity/control-stub.js"
 env_vars = [{ key = "OBELISK_API_URL", value = "${OBELISK_API_URL}" }]
 [[activity_js.allowed_host]]
 url_prefix = "${OBELISK_API_URL}"
@@ -142,23 +142,23 @@ replace_in = ["headers"]
 [[activity_stub]]
 name = "stub_injection"
 ffqn = "demo-agent:stub/stub.injection"
-wit = "wit"
+wit = "src/wit"
 
 [[activity_stub]]
 name = "stub_record_output"
 ffqn = "demo-agent:stub/stub.record-output"
-wit = "wit"
+wit = "src/wit"
 
 [[activity_stub]]
 name = "stub_ask_user"
 ffqn = "demo-agent:stub/stub.ask-user"
-wit = "wit"
+wit = "src/wit"
 
 # --- The agent loop -----------------------------------------------------------
 [[workflow_js]]
 name = "session"
 ffqn = "demo-agent:workflow/workflow.run-cancellable"
-location = "workflow/session.js"
+location = "src/workflow/session.js"
 params = [
   { name = "prompt", type = "string" },
   { name = "model",  type = "option<string>" },
@@ -171,7 +171,7 @@ exec.lock_expiry.minutes = 2
 # --- Web UI -------------------------------------------------------------------
 [[webhook_endpoint_js]]
 name = "ui-api"
-location = "webhook/ui-api.js"
+location = "src/webhook/ui-api.js"
 http_server = "internal"
 routes = [
   { methods = ["GET"], route = "/" },
@@ -213,5 +213,5 @@ replace_in = ["headers"]
 url_prefix = "${LLM_BASE_URL}"
 methods = ["GET"]
 url_regex_suffix = "/v1/models$"
-secrets = [{ name = "LLM_API_KEY", optional = true }]
+secrets = ["LLM_API_KEY"]
 replace_in = ["headers"]

@@ -74,7 +74,7 @@ function maxTokens(cfg) { return Number.isFinite(cfg.max_tokens) && cfg.max_toke
 // Auth is one shared bearer token for the whole endpoint: send
 // `Authorization: Bearer ${LLM_API_KEY}`. Under Obelisk LLM_API_KEY is a
 // short-lived placeholder the runtime swaps for the real secret in the outbound
-// header (allowed_host.secrets). Unset => no auth header (keyless local backend).
+// header (allowed_host.secrets).
 function applyAuth(headers) {
     const key = process.env['LLM_API_KEY'];
     if (key) headers['authorization'] = `Bearer ${key}`;

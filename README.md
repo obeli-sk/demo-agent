@@ -11,15 +11,13 @@ live between turns on a user-input offer.
 
 ## Deploying to Obelisk Cloud
 
-### 1. Clone and log in
+### 1. Clone and name the app
 
-Use `nix develop` to get the pinned Obelisk CLI.
+Install the Obelisk CLI.
 
 ```sh
 git clone https://github.com/obeli-sk/demo-agent.git
 cd demo-agent
-nix develop
-obelisk cloud auth login
 obelisk generate app-name
 ```
 
@@ -86,18 +84,17 @@ the source of truth for both sides.
 
 ## Running locally
 
-JS components need no build. Configure the LLM endpoint, then serve:
+With Obelisk and `just` installed, configure the LLM endpoint and start the server.
 
 ```sh
 export LLM_BASE_URL=http://127.0.0.1:9190  # discover models from the local backend
 just serve
 ```
 
-`nix develop` (or direnv via `.envrc-example`) provides the pinned Obelisk and
-Node. Then open <http://localhost:9091> (the webhook listener), start a
-conversation, and watch the model call `fetch_url`; trigger `ask_user` and answer
-it inline; use Stop to interrupt a turn or Cancel to end the run. A session that gets
-no prompt or `ask_user` answer for 7 days ends itself with an idle-timeout error.
+Open <http://localhost:9091> and start a conversation. Ask the agent to call
+`fetch_url` or try `ask_user` and answer its question inline. Use Stop to
+interrupt a turn or Cancel to end the run. A session ends with an idle timeout
+after seven days without a prompt or an answer to `ask_user`.
 
 The agent UI uses the `internal` listener. `just serve` and `just serve-mock`
 use `--dev` for local access without credentials; keep this listener on localhost.

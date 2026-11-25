@@ -61,6 +61,10 @@ no prompt or `ask_user` answer for 7 days ends itself with an idle-timeout error
 
 The agent UI uses the `internal` listener. `just serve` and `just serve-mock`
 use `--dev` for local access without credentials; keep this listener on localhost.
+Both use Obelisk's default server settings. On Linux, SQLite data lives in
+`${XDG_DATA_HOME:-$HOME/.local/share}/obelisk/apps/demo-agent/sqlite/`, and logs
+go to the console. Existing runs from the previous configuration are still
+stored in the checkout's `sqlite/` directory.
 On ObeliskNet, open `https://internal--<app>.<domain>` behind platform sign-in.
 The live app leaves the public `external` listener closed. The mock app exposes
 only its dummy `/demo` page there.

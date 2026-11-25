@@ -3,18 +3,18 @@ default: serve
 # Run the agent. LLM_BASE_URL provides discovery; AGENT_MODELS is the fallback
 # (see .envrc-example / the README). JS components need no build step.
 serve:
-  obelisk server run --dev -d deployment.toml --server-config server.toml --app-config app.toml
+  obelisk server run --dev -d deployment.toml --app-config app.toml
 
 # Run with a scripted mock LLM: watch the whole loop drive a turn (a fetch_url
 # tool call + its real result + a final answer) with NO LLM endpoint, key, or
 # catalog. See activity/llm-chat-mock.js.
 serve-mock:
-  obelisk server run --dev -d deployment.mock.toml --server-config server.toml --app-config app.mock.toml
+  obelisk server run --dev -d deployment.mock.toml --app-config app.mock.toml
 
 # Compile, link and policy-check both deployments
 verify:
-  obelisk server verify --dev --skip-db --server-config server.toml --app-config app.toml -d deployment.toml
-  obelisk server verify --dev --skip-db --server-config server.toml --app-config app.mock.toml -d deployment.mock.toml
+  obelisk server verify --dev --skip-db --app-config app.toml -d deployment.toml
+  obelisk server verify --dev --skip-db --app-config app.mock.toml -d deployment.mock.toml
 
 # Unit tests: pure logic, runnable offline (no Obelisk, no network).
 test:

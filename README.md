@@ -50,7 +50,6 @@ JS components need no build. Configure the LLM endpoint, then serve:
 
 ```sh
 export LLM_BASE_URL=http://127.0.0.1:9190  # discover models from the local backend
-export LLM_API_KEY=local-dev               # placeholder for a backend that ignores bearer tokens
 just serve
 ```
 
@@ -93,18 +92,18 @@ the fastest way to see the architecture end to end, and it documents the
 
 ## LLM endpoint
 
-Local runs require `LLM_BASE_URL` and `LLM_API_KEY`. Cloud deployment supplies the URL from
+Local runs require `LLM_BASE_URL`. Cloud deployment supplies the URL from
 the account's `llm` integration declared in `app.toml`, overriding local values.
 
 One endpoint serves the whole catalog: the fallback JSON catalog `AGENT_MODELS`
 (optional), the base URL `LLM_BASE_URL` (including any gateway path before
-`/v1`), and the bearer token `LLM_API_KEY`. Each
+`/v1`), and an optional bearer token `LLM_API_KEY`. Each
 catalog entry is `{ id, label, api_type, path?, wire_model, max_tokens? }`, where
 `api_type` is `anthropic-messages`, `openai-chat-completions`, or
 `openai-responses`.
 
 The model picker and LLM activity first try `GET <LLM_BASE_URL>/v1/models`,
-using `LLM_API_KEY`. A nonempty response supplies the models;
+using `LLM_API_KEY` when configured. A nonempty response supplies the models;
 matching configured entries keep their aliases, adapters, provider paths, and
 token limits. Advertised defaults appear first. The model list does not say
 which API a model speaks, so nothing is guessed: the UI's api picker chooses
@@ -174,7 +173,7 @@ addresses are internal public-env sources declared in `app.toml`:
 |-----|---------|---------|
 | `AGENT_MODELS` | `[]` | Fallback LLM catalog JSON |
 | `LLM_BASE_URL` | required locally; supplied by cloud | LLM base URL before `/v1/...`, e.g. `https://openrouter.ai/api` |
-| `LLM_API_KEY` | required for the live app | LLM bearer token |
+| `LLM_API_KEY` | unset | Bearer token for LLM endpoints that require one |
 | `MAX_STEPS` | `10` | model invocations per turn |
 | `TOOLS_JSON` | `[fetch_url]` | model-facing tool registry |
 | `SYSTEM_PROMPT` | built-in | base system prompt |
@@ -189,8 +188,8 @@ addresses are internal public-env sources declared in `app.toml`:
 (`src/shared/session-state.test.js`), and the `fetch_url` tool
 (`src/activity/fetch-url.test.js`). `just verify` compiles and links both
 deployments against the WIT and checks them against their app policies
-(`app.toml`, `test/app.mock.toml`) without a running server. Set `LLM_BASE_URL` and
-`LLM_API_KEY` for live verification. `AGENT_MODELS` is optional.
+(`app.toml`, `test/app.mock.toml`) without a running server. Set `LLM_BASE_URL`
+for live verification. `AGENT_MODELS` and `LLM_API_KEY` are optional.
 `just e2e` ([`scripts/e2e-mock.sh`](scripts/e2e-mock.sh)) starts
 `test/deployment.mock.toml` on a throwaway server (non-default ports and a temporary
 database, so a dev server can keep running) and drives one turn through the

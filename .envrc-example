@@ -2,8 +2,6 @@ use flake .
 
 # Local backend: models are discovered from GET /v1/models.
 export LLM_BASE_URL=http://127.0.0.1:9190
-# Required for the live app. For a local backend that ignores bearer tokens, use a placeholder.
-# export LLM_API_KEY="local-dev"
 
 # OpenRouter with an optional fallback catalog (see README "LLM endpoint"):
 # export AGENT_MODELS="$(cat models.openrouter.json)"

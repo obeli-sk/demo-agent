@@ -45,7 +45,7 @@ ${TOOLS_JSON:-[
 # AGENT_MODELS is an optional fallback; each entry routes to a wire API (anthropic-messages,
 # openai-chat-completions, openai-responses) under the shared LLM_BASE_URL
 # (including any gateway prefix, e.g. "https://openrouter.ai/api"; also the
-# allowed_host url_prefix), authenticated by the required LLM_API_KEY secret.
+# allowed_host url_prefix), with the LLM_API_KEY secret when configured.
 [[activity_js]]
 name = "llm_chat"
 ffqn = "demo-agent:llm/chat.completion"
@@ -68,13 +68,13 @@ replace_in = ["headers"]
 url_prefix = "${LLM_BASE_URL}"
 methods = ["GET"]
 url_regex_suffix = "/v1/models$"
-secrets = ["LLM_API_KEY"]
+secrets = [{ name = "LLM_API_KEY", optional = true }]
 replace_in = ["headers"]
 [[activity_js.allowed_host]]
 url_prefix = "${LLM_BASE_URL}"
 methods = ["POST"]
 url_regex_suffix = "(/[^/]+)*/v1/(messages|chat/completions|responses)$"
-secrets = ["LLM_API_KEY"]
+secrets = [{ name = "LLM_API_KEY", optional = true }]
 replace_in = ["headers"]
 
 # --- Example tool: fetch_url --------------------------------------------------
@@ -213,5 +213,5 @@ replace_in = ["headers"]
 url_prefix = "${LLM_BASE_URL}"
 methods = ["GET"]
 url_regex_suffix = "/v1/models$"
-secrets = ["LLM_API_KEY"]
+secrets = [{ name = "LLM_API_KEY", optional = true }]
 replace_in = ["headers"]

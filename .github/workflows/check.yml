@@ -90,12 +90,11 @@ jobs:
       - name: Populate the nix store
         run: nix develop --command echo
 
-      # Placeholders for the required public variable and secret, so verify runs without --allow-unavailable-runtime-config.
+      # Verify that the live deployment accepts an LLM endpoint without a key.
       - name: obelisk server verify
         env:
           AGENT_MODELS: "[]"
           LLM_BASE_URL: "http://127.0.0.1:9190"
-          LLM_API_KEY: "ci-placeholder"
         run: nix develop --command just verify
 
   e2e:

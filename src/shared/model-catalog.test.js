@@ -28,24 +28,33 @@ const response = (body, status = 200) => ({
     text: async () => typeof body === "string" ? body : JSON.stringify(body),
 });
 
-test("discovery works without a configured catalog and supplies the picker and LLM request", async () => {
-    const calls = [];
-    await withEndpoint("[]", async (url, options) => {
-        calls.push({ url, options });
-        assert.equal(options.headers.authorization, "Bearer test-key");
-        if (url.endsWith("/v1/models")) {
-            return response({ data: [{ id: "codex/discovered", display_name: "Discovered", is_default: true }] });
-        }
-        assert.equal(url, "http://llm.test/v1/chat/completions");
-        assert.equal(JSON.parse(options.body).model, "codex/discovered");
-        return response({ choices: [{ message: { content: "hello" }, finish_reason: "stop" }] });
-    }, async () => {
-        assert.deepEqual((await loadModels()).models, [{ id: "codex/discovered", label: "Discovered", api_type: "openai-chat-completions" }]);
-        const result = await completion("", JSON.stringify([{ role: "user", content: [{ type: "text", text: "hi" }] }]), "[]", "codex/discovered", "", []);
-        assert.equal(JSON.parse(result.reply.content_json)[0].text, "hello");
-        assert.equal(calls[0].url, "http://llm.test/v1/models");
+for (const withKey of [true, false]) {
+    test(`discovery supplies the picker and LLM request ${withKey ? "with" : "without"} an API key`, async () => {
+        const calls = [];
+        await withEndpoint("[]", async (url, options) => {
+            calls.push({ url, options });
+            if (url.endsWith("/v1/models")) {
+                return response({ data: [{ id: "codex/discovered", display_name: "Discovered", is_default: true }] });
+            }
+            assert.equal(JSON.parse(options.body).model, "codex/discovered");
+            return response({ choices: [{ message: { content: "hello" }, finish_reason: "stop" }] });
+        }, async () => {
+            if (!withKey) delete process.env.LLM_API_KEY;
+            assert.deepEqual((await loadModels()).models, [{ id: "codex/discovered", label: "Discovered", api_type: "openai-chat-completions" }]);
+            const result = await completion("", JSON.stringify([{ role: "user", content: [{ type: "text", text: "hi" }] }]), "[]", "codex/discovered", "", []);
+            assert.equal(JSON.parse(result.reply.content_json)[0].text, "hello");
+            assert.deepEqual(calls.map(({ url }) => url), [
+                "http://llm.test/v1/models",
+                "http://llm.test/v1/models",
+                "http://llm.test/v1/chat/completions",
+            ]);
+            for (const { options } of calls) {
+                const headers = new Headers(options.headers);
+                assert.equal(headers.get("authorization"), withKey ? "Bearer test-key" : null);
+            }
+        });
     });
-});
+}
 
 test("discovery preserves configured wire adapters and aliases, and prefers advertised defaults", async () => {
     const configured = [{ id: "legacy", wire_model: "provider/model", api_type: "openai-responses", path: "/gateway", max_tokens: 100 }];

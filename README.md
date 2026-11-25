@@ -18,11 +18,8 @@ Install the Obelisk CLI.
 ```sh
 git clone https://github.com/obeli-sk/demo-agent.git
 cd demo-agent
-obelisk generate app-name
+obelisk generate app-name # writes a unique name to `app.toml`
 ```
-
-`obelisk generate app-name` writes a unique name to `app.toml`. Run it once for
-each new app.
 
 ### 2. Push the app
 

@@ -1,4 +1,4 @@
-app_name = "demo-agent"
+app_name = "demo_agent"
 
 [cloud.integrations]
 llm = { type = "llm", env = "LLM_BASE_URL" }
